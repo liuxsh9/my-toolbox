@@ -1,4 +1,29 @@
 node_modules/
 dist/
+
+# SQLite
 *.db
+*.db-shm
+*.db-wal
+*.db-journal
+packages/portal/data/
+
+# OS
 .DS_Store
+Thumbs.db
+
+# Editor
+*.swp
+*.swo
+*~
+.idea/
+.vscode/
+
+# Logs
+*.log
+logs/
+
+# Environment
+.env
+.env.*
+!.env.example
