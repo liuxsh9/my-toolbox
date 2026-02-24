@@ -1,0 +1,24 @@
+{
+  "name": "my-toolbox",
+  "private": true,
+  "version": "0.1.0",
+  "description": "本地工具门户平台",
+  "scripts": {
+    "dev:portal": "pnpm --filter @my-toolbox/portal dev",
+    "dev:cc-monitor": "pnpm --filter @my-toolbox/cc-monitor dev",
+    "build": "pnpm -r build",
+    "start": "pm2 start ecosystem.config.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "better-sqlite3",
+      "esbuild"
+    ]
+  },
+  "devDependencies": {
+    "tsx": "^4.21.0"
+  }
+}

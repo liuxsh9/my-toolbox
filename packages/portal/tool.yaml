@@ -1,0 +1,7 @@
+name: portal
+displayName: My Toolbox Portal
+description: 本地工具门户 — 管理和展示所有注册的小工具
+version: 0.1.0
+url: http://localhost:3000
+health: /api/health
+pm2Name: portal

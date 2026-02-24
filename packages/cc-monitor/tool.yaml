@@ -1,0 +1,8 @@
+name: cc-monitor
+displayName: Claude Code Monitor
+description: 监控本地所有 Claude Code 实例的运行状态
+version: 0.1.0
+url: http://localhost:3001
+health: /api/health
+pm2Name: cc-monitor
+category: dev-tools
