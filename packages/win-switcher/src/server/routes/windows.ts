@@ -54,8 +54,20 @@ export function registerWindowsRoutes(app: FastifyInstance) {
     '/api/windows/focus-by-pid',
     async (req, reply) => {
       const { pid, cwd } = req.body ?? {}
+
+      // cwd-only fallback: search window titles for project basename
       if (typeof pid !== 'number') {
-        return reply.status(400).send({ ok: false, error: 'pid (number) is required' })
+        if (!cwd) return reply.status(400).send({ ok: false, error: 'pid or cwd is required' })
+        const basename = cwd.split('/').filter(Boolean).pop() ?? cwd
+        const windows = await listWindows()
+        const win = windows.find(w => w.title.includes(basename))
+        if (!win) return reply.status(404).send({ ok: false, error: 'window_not_found' })
+        try {
+          await focusWindow(win.id, win.pid, win.title)
+          return { ok: true, windowId: win.id, app: win.app }
+        } catch {
+          return reply.status(500).send({ ok: false, error: 'focus_failed' })
+        }
       }
 
       const found = await findTerminalWindowByPid(pid, cwd)
@@ -64,13 +76,11 @@ export function registerWindowsRoutes(app: FastifyInstance) {
       }
 
       try {
-        // If cwd is provided, use focus-by-cwd for precise window targeting (VS Code, Cursor, etc.)
         if (cwd) {
           const result = await focusByCwd(pid, cwd)
           return result
         }
 
-        // Get window details for focus call
         const windows = await listWindows()
         const win = windows.find(w => w.id === found.windowId)
         if (!win) return reply.status(404).send({ ok: false, error: 'window_not_found' })

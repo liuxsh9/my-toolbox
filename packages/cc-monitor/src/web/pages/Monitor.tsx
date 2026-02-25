@@ -72,12 +72,13 @@ function getProjectName(project: string): string {
 
 const WIN_SWITCHER_URL = 'http://localhost:3003'
 
-async function focusSessionWindow(pid: number, cwd?: string) {
+async function focusSessionWindow(pid: number | undefined, cwd?: string) {
+  if (!pid && !cwd) return
   try {
     await fetch(`${WIN_SWITCHER_URL}/api/windows/focus-by-pid`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ pid, cwd }),
+      body: JSON.stringify({ ...(pid ? { pid } : {}), cwd }),
     })
   } catch { /* win-switcher not running */ }
 }
@@ -216,7 +217,7 @@ export function Monitor({ connectionStatus, hooksInstalled, isWidget }: MonitorP
         return (
           <div
             key={session.sessionId}
-            onClick={() => session.pid && focusSessionWindow(session.pid, session.project)}
+            onClick={() => focusSessionWindow(session.pid, session.project)}
             style={{
               background: '#1e293b',
               borderRadius: '8px',
@@ -226,7 +227,7 @@ export function Monitor({ connectionStatus, hooksInstalled, isWidget }: MonitorP
               display: 'flex',
               flexDirection: 'column',
               gap: '10px',
-              cursor: session.pid ? 'pointer' : 'default',
+              cursor: 'pointer',
             }}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
@@ -356,7 +357,7 @@ function WidgetView({ sessions, connectionStatus }: {
             const color = STATUS_COLORS[session.status] || '#6b7280'
             const isActive = ACTIVE_STATUSES.has(session.status)
             const isEnded = ['ended', 'terminated'].includes(session.status)
-            const clickable = !!session.pid
+            const clickable = !!(session.pid || session.project)
 
             return (
               <div
