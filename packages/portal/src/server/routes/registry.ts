@@ -14,6 +14,16 @@ interface RegisterBody {
   pm2Name?: string
 }
 
+function parseWidgetConfig(tool: Record<string, unknown>): Record<string, unknown> {
+  if (tool.widgetConfig && typeof tool.widgetConfig === 'string') {
+    try {
+      tool.widget = JSON.parse(tool.widgetConfig)
+    } catch { /* ignore */ }
+  }
+  delete tool.widgetConfig
+  return tool
+}
+
 export function registerRoutes(app: FastifyInstance, db: Database.Database) {
   const upsertTool = db.prepare(`
     INSERT INTO tools (name, displayName, description, version, url, health, icon, category, pm2Name, status, source, lastHeartbeat, updatedAt)
@@ -79,8 +89,8 @@ export function registerRoutes(app: FastifyInstance, db: Database.Database) {
 
   // GET /api/tools
   app.get('/api/tools', async () => {
-    const tools = getAllTools.all()
-    return { ok: true, data: tools }
+    const tools = getAllTools.all() as Record<string, unknown>[]
+    return { ok: true, data: tools.map(parseWidgetConfig) }
   })
 
   // GET /api/tools/:name
@@ -100,7 +110,7 @@ export function registerRoutes(app: FastifyInstance, db: Database.Database) {
       }
     }
 
-    return { ok: true, data: tool }
+    return { ok: true, data: parseWidgetConfig(tool) }
   })
 
   // DELETE /api/tools/:name

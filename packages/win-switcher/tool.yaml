@@ -1,0 +1,13 @@
+name: win-switcher
+displayName: Window Switcher
+description: 查看并快速跳转到本机所有打开的窗口
+version: 0.1.0
+url: http://localhost:3003
+health: /api/health
+pm2Name: win-switcher
+category: productivity
+widget:
+  minW: 2
+  minH: 3
+  defaultW: 5
+  defaultH: 7

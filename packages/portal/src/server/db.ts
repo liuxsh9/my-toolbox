@@ -25,6 +25,7 @@ export function initDb(): Database.Database {
       icon TEXT,
       category TEXT,
       pm2Name TEXT,
+      widgetConfig TEXT,
       status TEXT NOT NULL DEFAULT 'running',
       source TEXT NOT NULL DEFAULT 'remote',
       lastHeartbeat TEXT,

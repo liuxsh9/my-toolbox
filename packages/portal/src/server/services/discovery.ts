@@ -13,8 +13,8 @@ export function startDiscovery(db: Database.Database) {
   const packagesDir = path.resolve(__dirname, '../../../../')
 
   const upsertTool = db.prepare(`
-    INSERT INTO tools (name, displayName, description, version, url, health, icon, category, pm2Name, status, source, lastHeartbeat, updatedAt)
-    VALUES (@name, @displayName, @description, @version, @url, @health, @icon, @category, @pm2Name, 'running', 'local', datetime('now'), datetime('now'))
+    INSERT INTO tools (name, displayName, description, version, url, health, icon, category, pm2Name, widgetConfig, status, source, lastHeartbeat, updatedAt)
+    VALUES (@name, @displayName, @description, @version, @url, @health, @icon, @category, @pm2Name, @widgetConfig, 'running', 'local', datetime('now'), datetime('now'))
     ON CONFLICT(name) DO UPDATE SET
       displayName = @displayName,
       description = @description,
@@ -24,6 +24,7 @@ export function startDiscovery(db: Database.Database) {
       icon = @icon,
       category = @category,
       pm2Name = @pm2Name,
+      widgetConfig = @widgetConfig,
       source = 'local',
       updatedAt = datetime('now')
   `)
@@ -50,6 +51,7 @@ export function startDiscovery(db: Database.Database) {
           icon: (manifest.icon || null) as string | null,
           category: (manifest.category || null) as string | null,
           pm2Name: (manifest.pm2Name || null) as string | null,
+          widgetConfig: manifest.widget ? JSON.stringify(manifest.widget) : null,
         })
         console.log(`[discovery] Registered local tool: ${manifest.name}`)
       } catch (err) {

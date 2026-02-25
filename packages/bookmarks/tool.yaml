@@ -1,0 +1,13 @@
+name: bookmarks
+displayName: Bookmarks
+description: 常用网页聚合器，快速访问收藏的网址
+version: 0.1.0
+url: http://localhost:3002
+health: /api/health
+pm2Name: bookmarks
+category: productivity
+widget:
+  minW: 2
+  minH: 3
+  defaultW: 4
+  defaultH: 6

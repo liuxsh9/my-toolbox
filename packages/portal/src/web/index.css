@@ -1,0 +1,49 @@
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:        #18160f;
+  --surface:   #221f17;
+  --surface2:  #2a2720;
+  --border:    rgba(255,255,255,0.09);
+  --border2:   rgba(255,255,255,0.05);
+  --text-1:    #ede8de;
+  --text-2:    #8c8680;
+  --text-3:    #4a4844;
+  --accent:    #c8a96e;
+  --green:     #6abf7e;
+  --amber:     #d4a843;
+  --red:       #c0614a;
+  --radius:    10px;
+}
+
+html, body, #root {
+  height: 100%;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text-1);
+}
+
+/* react-grid-layout resize handle — make it subtle */
+.react-resizable-handle {
+  opacity: 0;
+  transition: opacity .2s;
+}
+.react-grid-item:hover .react-resizable-handle {
+  opacity: 1;
+}
+.react-resizable-handle::after {
+  border-color: var(--accent) !important;
+  opacity: 0.5;
+}
+
+/* Drag placeholder */
+.react-grid-item.react-grid-placeholder {
+  background: rgba(200,169,110,0.08) !important;
+  border: 1px dashed rgba(200,169,110,0.25) !important;
+  border-radius: var(--radius) !important;
+}
