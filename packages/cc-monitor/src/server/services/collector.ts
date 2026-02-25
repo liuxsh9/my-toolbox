@@ -1,3 +1,15 @@
+import path from 'node:path'
+
+const NOTIFICATIONS_URL = process.env.NOTIFICATIONS_URL || 'http://localhost:3004'
+
+function pushNotification(title: string, body: string, source: string): void {
+  fetch(`${NOTIFICATIONS_URL}/api/notifications`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ title, body, source }),
+  }).catch(() => {})
+}
+
 export type SessionStatus =
   | 'started'
   | 'processing'
@@ -85,9 +97,11 @@ export class SessionManager {
         break
       case 'Stop':
         session.status = 'idle'
+        pushNotification('Claude 完成了工作', path.basename(session.project), 'cc-monitor')
         break
       case 'Notification':
         session.status = 'waiting_for_input'
+        pushNotification('Claude 需要你的决策', path.basename(session.project), 'cc-monitor')
         break
       case 'SessionEnd':
         session.status = 'ended'

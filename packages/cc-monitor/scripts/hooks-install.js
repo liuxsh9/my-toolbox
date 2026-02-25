@@ -15,7 +15,7 @@ const SETTINGS_PATH = path.join(os.homedir(), '.claude', 'settings.json')
 
 // The hook command: read stdin (JSON from Claude Code), POST to monitor
 // We use a shell script approach that pipes stdin through curl
-const hookCommand = `cat /dev/stdin | curl -s -X POST ${MONITOR_URL}/api/events -H 'Content-Type: application/json' -d @- > /dev/null 2>&1 || true`
+const hookCommand = `cat /dev/stdin | curl -s --noproxy localhost,127.0.0.1 -X POST ${MONITOR_URL}/api/events -H 'Content-Type: application/json' -d @- > /dev/null 2>&1 || true`
 
 // All hooks are async: true because the monitor is a pure observer and should never block Claude Code
 const MONITOR_HOOKS = {

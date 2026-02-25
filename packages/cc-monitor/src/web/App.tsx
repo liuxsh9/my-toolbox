@@ -4,6 +4,7 @@ import { Monitor } from './pages/Monitor'
 type ConnectionStatus = 'connecting' | 'connected' | 'disconnected'
 
 export function App() {
+  const isWidget = new URLSearchParams(window.location.search).get('mode') === 'widget'
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('connecting')
   const [hooksInstalled, setHooksInstalled] = useState<boolean | null>(null)
 
@@ -39,8 +40,16 @@ export function App() {
     connectionStatus === 'connected' ? 'Connected' :
     connectionStatus === 'disconnected' ? 'Disconnected' : 'Connecting...'
 
+  if (isWidget) {
+    return (
+      <div style={{ height: '100%', background: '#111210', color: '#e4dfd6', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+        <Monitor connectionStatus={connectionStatus} hooksInstalled={hooksInstalled} isWidget />
+      </div>
+    )
+  }
+
   return (
-    <div style={{ minHeight: '100vh', background: '#0f172a', color: '#e2e8f0' }}>
+    <div style={{ minHeight: '100vh', background: '#111210', color: '#e4dfd6' }}>
       <header style={{
         padding: '16px 24px',
         borderBottom: '1px solid #1e293b',

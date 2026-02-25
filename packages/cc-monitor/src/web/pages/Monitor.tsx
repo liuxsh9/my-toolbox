@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 
 interface Session {
   sessionId: string
@@ -17,6 +17,7 @@ type ConnectionStatus = 'connecting' | 'connected' | 'disconnected'
 interface MonitorProps {
   connectionStatus: ConnectionStatus
   hooksInstalled: boolean | null
+  isWidget?: boolean
 }
 
 const STATUS_COLORS: Record<string, string> = {
@@ -69,15 +70,40 @@ function getProjectName(project: string): string {
   return parts[parts.length - 1] || project
 }
 
-export function Monitor({ connectionStatus, hooksInstalled }: MonitorProps) {
+const WIN_SWITCHER_URL = 'http://localhost:3003'
+
+async function focusSessionWindow(pid: number, cwd?: string) {
+  try {
+    await fetch(`${WIN_SWITCHER_URL}/api/windows/focus-by-pid`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pid, cwd }),
+    })
+  } catch { /* win-switcher not running */ }
+}
+
+export function Monitor({ connectionStatus, hooksInstalled, isWidget }: MonitorProps) {
   const [sessions, setSessions] = useState<Session[]>([])
   const [loading, setLoading] = useState(true)
+  const orderRef = useRef<Map<string, number>>(new Map())
+
+  function mergeSessions(incoming: Session[]): Session[] {
+    const order = orderRef.current
+    incoming.forEach(s => {
+      if (!order.has(s.sessionId)) order.set(s.sessionId, order.size)
+    })
+    const incomingIds = new Set(incoming.map(s => s.sessionId))
+    for (const id of order.keys()) {
+      if (!incomingIds.has(id)) order.delete(id)
+    }
+    return [...incoming].sort((a, b) => (order.get(a.sessionId) ?? 0) - (order.get(b.sessionId) ?? 0))
+  }
 
   async function fetchSessions() {
     try {
       const res = await fetch('/api/sessions')
       const json = await res.json()
-      if (json.ok) setSessions(json.data)
+      if (json.ok) setSessions(prev => mergeSessions(json.data))
     } catch {
       // connection errors are handled at App level
     } finally {
@@ -92,7 +118,11 @@ export function Monitor({ connectionStatus, hooksInstalled }: MonitorProps) {
   }, [])
 
   if (loading) {
-    return <div style={{ color: '#94a3b8' }}>Loading...</div>
+    return <div style={{ color: '#94a3b8', padding: isWidget ? 8 : 0 }}>Loading...</div>
+  }
+
+  if (isWidget) {
+    return <WidgetView sessions={sessions} connectionStatus={connectionStatus} />
   }
 
   // Disconnected state
@@ -186,6 +216,7 @@ export function Monitor({ connectionStatus, hooksInstalled }: MonitorProps) {
         return (
           <div
             key={session.sessionId}
+            onClick={() => session.pid && focusSessionWindow(session.pid, session.project)}
             style={{
               background: '#1e293b',
               borderRadius: '8px',
@@ -195,6 +226,7 @@ export function Monitor({ connectionStatus, hooksInstalled }: MonitorProps) {
               display: 'flex',
               flexDirection: 'column',
               gap: '10px',
+              cursor: session.pid ? 'pointer' : 'default',
             }}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
@@ -277,6 +309,97 @@ export function Monitor({ connectionStatus, hooksInstalled }: MonitorProps) {
           </div>
         )
       })}
+    </div>
+  )
+}
+
+// ─── Widget View ────────────────────────────────────────────
+
+function WidgetView({ sessions, connectionStatus }: {
+  sessions: Session[]
+  connectionStatus: ConnectionStatus
+}) {
+  const activeSessions = sessions.filter(s => !['ended', 'terminated'].includes(s.status))
+
+  function handleSessionClick(session: Session) {
+    if (!session.pid) return
+    focusSessionWindow(session.pid, session.project)
+  }
+
+  return (
+    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      {/* Status bar */}
+      <div style={{
+        padding: '6px 10px',
+        borderBottom: '1px solid #1e293b',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        flexShrink: 0,
+      }}>
+        <span style={{ fontSize: 11, color: '#64748b' }}>
+          {activeSessions.length} active
+        </span>
+        <span style={{
+          width: 6, height: 6, borderRadius: '50%',
+          background: connectionStatus === 'connected' ? '#22c55e' : connectionStatus === 'disconnected' ? '#ef4444' : '#eab308',
+          display: 'inline-block',
+        }} />
+      </div>
+
+      {/* Session list */}
+      <div style={{ flex: 1, overflow: 'auto' }}>
+        {sessions.length === 0 ? (
+          <p style={{ fontSize: 12, color: '#475569', padding: '12px 10px' }}>No active sessions</p>
+        ) : (
+          sessions.map((session) => {
+            const color = STATUS_COLORS[session.status] || '#6b7280'
+            const isActive = ACTIVE_STATUSES.has(session.status)
+            const isEnded = ['ended', 'terminated'].includes(session.status)
+            const clickable = !!session.pid
+
+            return (
+              <div
+                key={session.sessionId}
+                onClick={() => handleSessionClick(session)}
+                style={{
+                  padding: '8px 10px',
+                  borderBottom: '1px solid #1e293b',
+                  cursor: clickable ? 'pointer' : 'default',
+                  opacity: isEnded ? 0.5 : 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  transition: 'background .1s',
+                }}
+                onMouseEnter={e => { if (clickable) (e.currentTarget as HTMLDivElement).style.background = '#1e293b' }}
+                onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.background = 'transparent' }}
+              >
+                <span
+                  className={isActive ? 'pulse' : undefined}
+                  style={{
+                    width: 7, height: 7, borderRadius: '50%',
+                    background: color, flexShrink: 0,
+                  }}
+                />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <p style={{
+                    fontSize: 12, fontWeight: 600, color: '#e2e8f0',
+                    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                    lineHeight: 1.3,
+                  }}>
+                    {getProjectName(session.project)}
+                  </p>
+                  <p style={{ fontSize: 10, color: '#475569', lineHeight: 1.3 }}>
+                    {session.lastToolName ? session.lastToolName : STATUS_LABELS[session.status] || session.status}
+                    {' · '}{formatDuration(session.startedAt)}
+                  </p>
+                </div>
+              </div>
+            )
+          })
+        )}
+      </div>
     </div>
   )
 }
