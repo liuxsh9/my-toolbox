@@ -1,3 +1,10 @@
+export interface WidgetConfig {
+  minW?: number
+  minH?: number
+  defaultW?: number
+  defaultH?: number
+}
+
 export interface ToolManifest {
   name: string
   displayName: string
@@ -8,6 +15,7 @@ export interface ToolManifest {
   icon?: string
   category?: string
   pm2Name?: string
+  widget?: WidgetConfig
 }
 
 export type ToolStatus = 'running' | 'unhealthy' | 'unreachable' | 'stopped'
