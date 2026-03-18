@@ -236,7 +236,7 @@ stdout JSON lines，Node 逐行解析：
 
 ### GET /api/stats?period=week|month
 
-统计摘要。
+统计摘要。`week` = 当前自然周（周一至周日），`month` = 当前自然月。
 
 ```json
 {
@@ -254,11 +254,11 @@ stdout JSON lines，Node 逐行解析：
 
 ### GET /api/holidays/:year
 
-获取指定年份的节假日配置。
+获取指定年份的节假日配置。从 `data/holidays.json` 读取。
 
 ### PUT /api/holidays/:year
 
-更新指定年份的节假日配置。
+更新指定年份的节假日配置。写回 `data/holidays.json` 文件（`holidays.json` 是唯一数据源，不存入 SQLite）。
 
 ## 前端设计
 
