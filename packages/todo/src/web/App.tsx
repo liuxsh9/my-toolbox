@@ -75,16 +75,25 @@ function SortableItem({
   compact,
   onToggle,
   onDelete,
+  onEdit,
 }: {
   todo: Todo
   compact: boolean
   onToggle: (id: string, completed: number) => void
   onDelete: (id: string) => void
+  onEdit: (id: string, title: string) => void
 }) {
   const [hovered, setHovered] = useState(false)
+  const [editing, setEditing] = useState(false)
+  const [editValue, setEditValue] = useState(todo.title)
+  const editRef = useRef<HTMLInputElement>(null)
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: todo.id,
   })
+
+  useEffect(() => {
+    if (editing) editRef.current?.focus()
+  }, [editing])
 
   const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
@@ -92,15 +101,15 @@ function SortableItem({
     opacity: isDragging ? 0.4 : todo.completed ? 0.45 : 1,
     display: 'flex',
     alignItems: 'center',
-    gap: compact ? '6px' : '8px',
-    padding: compact ? '5px 4px' : '7px 8px',
-    borderRadius: compact ? '4px' : '6px',
+    gap: 8,
+    padding: compact ? '8px 10px' : '8px 12px',
+    borderBottom: '1px solid var(--border)',
     cursor: 'default',
     position: 'relative',
   }
 
-  const checkSize = compact ? 14 : 16
-  const fontSize = compact ? 12 : 13
+  const checkSize = compact ? 12 : 13
+  const fontSize = 12
 
   return (
     <div
@@ -131,19 +140,59 @@ function SortableItem({
       </div>
 
       {/* Title */}
-      <span
-        style={{
-          flex: 1,
-          fontSize,
-          color: todo.completed ? 'var(--text-2)' : 'var(--text-1)',
-          textDecoration: todo.completed ? 'line-through' : 'none',
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-          whiteSpace: 'nowrap',
-        }}
-      >
-        {todo.title}
-      </span>
+      {editing ? (
+        <input
+          ref={editRef}
+          value={editValue}
+          onChange={e => setEditValue(e.target.value)}
+          onKeyDown={e => {
+            if (e.key === 'Enter') {
+              const v = editValue.trim()
+              if (v && v !== todo.title) onEdit(todo.id, v)
+              setEditing(false)
+            }
+            if (e.key === 'Escape') {
+              setEditValue(todo.title)
+              setEditing(false)
+            }
+          }}
+          onBlur={() => {
+            const v = editValue.trim()
+            if (v && v !== todo.title) onEdit(todo.id, v)
+            setEditing(false)
+          }}
+          style={{
+            flex: 1,
+            fontSize,
+            color: 'var(--text-1)',
+            background: 'var(--surface2)',
+            border: '1px solid var(--accent)',
+            borderRadius: 3,
+            outline: 'none',
+            padding: '1px 4px',
+            fontFamily: 'inherit',
+          }}
+        />
+      ) : (
+        <span
+          onDoubleClick={() => {
+            setEditValue(todo.title)
+            setEditing(true)
+          }}
+          style={{
+            flex: 1,
+            fontSize,
+            color: todo.completed ? 'var(--text-2)' : 'var(--text-1)',
+            textDecoration: todo.completed ? 'line-through' : 'none',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+            cursor: 'text',
+          }}
+        >
+          {todo.title}
+        </span>
+      )}
 
       {/* Delete button (hover) */}
       {hovered && (
@@ -224,6 +273,11 @@ export function App() {
     setTodos(prev => prev.map(t => (t.id === id ? updated : t)))
   }
 
+  async function handleEdit(id: string, title: string) {
+    const updated = await updateTodo(id, { title })
+    setTodos(prev => prev.map(t => (t.id === id ? updated : t)))
+  }
+
   async function handleDelete(id: string) {
     await deleteTodo(id)
     setTodos(prev => prev.filter(t => t.id !== id))
@@ -253,12 +307,11 @@ export function App() {
         height: '100%',
         display: 'flex',
         flexDirection: 'column',
-        padding: compact ? '8px' : '12px',
         fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
       }}
     >
       {/* Scrollable list */}
-      <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+      <div style={{ flex: 1, overflowY: 'auto' }}>
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
           <SortableContext items={todos.map(t => t.id)} strategy={verticalListSortingStrategy}>
             {todos.map(todo => (
@@ -268,6 +321,7 @@ export function App() {
                 compact={compact}
                 onToggle={handleToggle}
                 onDelete={handleDelete}
+                onEdit={handleEdit}
               />
             ))}
           </SortableContext>
@@ -277,8 +331,8 @@ export function App() {
       {/* Bottom bar: input + archive */}
       <div
         style={{
-          marginTop: compact ? '6px' : '8px',
-          paddingTop: compact ? '6px' : '8px',
+          marginTop: 0,
+          padding: compact ? '6px 10px' : '8px 12px',
           borderTop: '1px solid var(--border)',
           display: 'flex',
           alignItems: 'center',
@@ -290,7 +344,7 @@ export function App() {
           value={input}
           onChange={e => setInput(e.target.value)}
           onKeyDown={e => { if (e.key === 'Enter') handleAdd() }}
-          placeholder={compact ? '+ 添加...' : '+ 添加待办...'}
+          placeholder={compact ? '+ Add...' : '+ Add todo...'}
           style={{
             flex: 1,
             background: 'transparent',
