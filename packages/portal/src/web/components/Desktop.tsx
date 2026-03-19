@@ -82,14 +82,14 @@ export function Desktop({ tools }: { tools: ToolInfo[] }) {
   const iframeRefs = useRef<Map<string, React.RefObject<HTMLIFrameElement>>>(new Map())
   const maximizedWidget = Object.entries(widgetStates).find(([, s]) => s.maximized)?.[0] ?? null
 
-  // Measure container width
+  // Measure container width (content area, excluding padding and scrollbar)
   useEffect(() => {
     if (!containerRef.current) return
     const ro = new ResizeObserver(entries => {
       setContainerWidth(entries[0].contentRect.width)
     })
     ro.observe(containerRef.current)
-    setContainerWidth(containerRef.current.offsetWidth)
+    setContainerWidth(containerRef.current.clientWidth - 16) // subtract padding 8*2
     return () => ro.disconnect()
   }, [])
 
@@ -174,7 +174,7 @@ export function Desktop({ tools }: { tools: ToolInfo[] }) {
   const toolMap = new Map(tools.map(t => [t.name, t]))
 
   return (
-    <div style={{ position: 'relative', flex: 1, overflow: 'hidden', minWidth: 0 }}>
+    <div style={{ position: 'relative', flex: 1, overflow: 'hidden', minWidth: 0, minHeight: 0 }}>
       {/* Maximized overlay */}
       {maximizedWidget && (() => {
         const tool = toolMap.get(maximizedWidget)
@@ -200,7 +200,7 @@ export function Desktop({ tools }: { tools: ToolInfo[] }) {
       })()}
 
       {/* Desktop grid */}
-      <div ref={containerRef} style={{ height: '100%', overflow: 'auto', padding: '8px 8px' }}>
+      <div ref={containerRef} style={{ height: '100%', overflowX: 'hidden', overflowY: 'auto', padding: 8 }}>
         {layouts.length === 0 ? (
           <EmptyDesktop onAdd={() => setShowPicker(true)} />
         ) : containerWidth > 0 ? (
@@ -208,7 +208,7 @@ export function Desktop({ tools }: { tools: ToolInfo[] }) {
             layout={layouts}
             cols={COLS}
             rowHeight={ROW_HEIGHT}
-            width={containerWidth - 16}
+            width={containerWidth}
             onLayoutChange={handleLayoutChange}
             draggableHandle=".widget-drag-handle"
             margin={[8, 8]}
