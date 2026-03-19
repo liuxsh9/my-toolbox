@@ -8,6 +8,6 @@ pm2Name: win-switcher
 category: productivity
 widget:
   minW: 2
-  minH: 3
+  minH: 2
   defaultW: 5
-  defaultH: 7
+  defaultH: 14

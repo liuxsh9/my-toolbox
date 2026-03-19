@@ -3,6 +3,8 @@ export interface WidgetConfig {
   minH?: number
   defaultW?: number
   defaultH?: number
+  zoom?: number            // iframe 内容缩放比例，如 0.75 表示缩小到 75%
+  refreshInterval?: number // 自动刷新间隔（秒），0 或不设置表示不刷新
 }
 
 export interface ToolManifest {

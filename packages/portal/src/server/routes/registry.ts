@@ -12,6 +12,7 @@ interface RegisterBody {
   icon?: string
   category?: string
   pm2Name?: string
+  widget?: Record<string, unknown>
 }
 
 function parseWidgetConfig(tool: Record<string, unknown>): Record<string, unknown> {
@@ -26,8 +27,8 @@ function parseWidgetConfig(tool: Record<string, unknown>): Record<string, unknow
 
 export function registerRoutes(app: FastifyInstance, db: Database.Database) {
   const upsertTool = db.prepare(`
-    INSERT INTO tools (name, displayName, description, version, url, health, icon, category, pm2Name, status, source, lastHeartbeat, updatedAt)
-    VALUES (@name, @displayName, @description, @version, @url, @health, @icon, @category, @pm2Name, 'running', @source, datetime('now'), datetime('now'))
+    INSERT INTO tools (name, displayName, description, version, url, health, icon, category, pm2Name, widgetConfig, status, source, lastHeartbeat, updatedAt)
+    VALUES (@name, @displayName, @description, @version, @url, @health, @icon, @category, @pm2Name, @widgetConfig, 'running', @source, datetime('now'), datetime('now'))
     ON CONFLICT(name) DO UPDATE SET
       displayName = @displayName,
       description = @description,
@@ -37,6 +38,7 @@ export function registerRoutes(app: FastifyInstance, db: Database.Database) {
       icon = @icon,
       category = @category,
       pm2Name = @pm2Name,
+      widgetConfig = @widgetConfig,
       status = 'running',
       lastHeartbeat = datetime('now'),
       updatedAt = datetime('now')
@@ -69,6 +71,7 @@ export function registerRoutes(app: FastifyInstance, db: Database.Database) {
       icon: body.icon || null,
       category: body.category || null,
       pm2Name: body.pm2Name || null,
+      widgetConfig: body.widget ? JSON.stringify(body.widget) : null,
       source: 'remote',
     })
 

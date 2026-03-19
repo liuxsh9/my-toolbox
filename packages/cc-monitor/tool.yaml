@@ -8,6 +8,6 @@ pm2Name: cc-monitor
 category: dev-tools
 widget:
   minW: 2
-  minH: 3
+  minH: 2
   defaultW: 4
-  defaultH: 6
+  defaultH: 12

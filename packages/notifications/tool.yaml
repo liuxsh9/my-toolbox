@@ -1,5 +1,5 @@
 name: notifications
-displayName: 通知中心
+displayName: Notifications
 description: 工具推送通知的统一收件箱，实时展示来自各工具的通知
 version: 0.1.0
 url: http://localhost:3004
@@ -8,6 +8,6 @@ pm2Name: notifications
 category: productivity
 widget:
   minW: 2
-  minH: 3
+  minH: 2
   defaultW: 3
-  defaultH: 5
+  defaultH: 10

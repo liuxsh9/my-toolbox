@@ -1,4 +1,4 @@
-import React, { forwardRef } from 'react'
+import React, { forwardRef, useEffect } from 'react'
 import type { ToolInfo } from '@my-toolbox/shared'
 
 const STATUS_DOT: Record<string, { color: string; glow: string }> = {
@@ -22,6 +22,16 @@ export const WidgetWindow = forwardRef<HTMLDivElement, WidgetWindowProps>(
   function WidgetWindow({ tool, minimized, maximized, onMinimize, onMaximize, onClose, iframeRef }, ref) {
     const dot = STATUS_DOT[tool.status] ?? STATUS_DOT.stopped
     const widgetUrl = `${tool.url}?mode=widget`
+
+    const interval = tool.widget?.refreshInterval ?? 0
+    useEffect(() => {
+      if (!interval || interval <= 0) return
+      const id = setInterval(() => {
+        const iframe = iframeRef.current
+        if (iframe) iframe.src = iframe.src
+      }, interval * 1000)
+      return () => clearInterval(id)
+    }, [interval, iframeRef])
 
     return (
       <div
@@ -73,7 +83,7 @@ export const WidgetWindow = forwardRef<HTMLDivElement, WidgetWindowProps>(
           </div>
 
           {/* Controls */}
-          <div style={{ display: 'flex', gap: 1 }} onClick={e => e.stopPropagation()}>
+          <div style={{ display: 'flex', gap: 1 }} onMouseDown={e => e.stopPropagation()} onClick={e => e.stopPropagation()}>
             <WinBtn title="在新标签页打开" onClick={() => window.open(tool.url, '_blank')}>
               <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
                 <path d="M4 2H2v6h6V6M6 1h3v3M9 1L5 5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -98,20 +108,36 @@ export const WidgetWindow = forwardRef<HTMLDivElement, WidgetWindowProps>(
         </div>
 
         {/* iframe */}
-        {!minimized && (
-          <iframe
-            ref={iframeRef}
-            src={widgetUrl}
-            title={tool.displayName}
-            style={{
-              flex: 1,
-              border: 'none',
-              width: '100%',
-              display: 'block',
-            }}
-            allow="clipboard-read; clipboard-write"
-          />
-        )}
+        {!minimized && (() => {
+          const zoom = tool.widget?.zoom ?? 1
+          const needsZoom = zoom !== 1
+          return needsZoom ? (
+            <div style={{ flex: 1, overflow: 'hidden', position: 'relative' }}>
+              <iframe
+                ref={iframeRef}
+                src={widgetUrl}
+                title={tool.displayName}
+                style={{
+                  border: 'none',
+                  display: 'block',
+                  width: `${100 / zoom}%`,
+                  height: `${100 / zoom}%`,
+                  transform: `scale(${zoom})`,
+                  transformOrigin: '0 0',
+                }}
+                allow="clipboard-read; clipboard-write"
+              />
+            </div>
+          ) : (
+            <iframe
+              ref={iframeRef}
+              src={widgetUrl}
+              title={tool.displayName}
+              style={{ flex: 1, border: 'none', width: '100%', display: 'block' }}
+              allow="clipboard-read; clipboard-write"
+            />
+          )
+        })()}
       </div>
     )
   }
