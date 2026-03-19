@@ -17,8 +17,8 @@ SQLite 数据库 `data/todo.db`，WAL 模式。
 | `completed` | INTEGER DEFAULT 0 | 0=未完成, 1=已完成 |
 | `archived` | INTEGER DEFAULT 0 | 0=活跃, 1=已归档 |
 | `sort_order` | INTEGER NOT NULL | 排序位置，越小越靠前 |
-| `created_at` | TEXT NOT NULL | ISO 8601 创建时间 |
-| `updated_at` | TEXT NOT NULL | ISO 8601 更新时间 |
+| `created_at` | INTEGER NOT NULL | 创建时间，epoch ms (Date.now())，与 notes 包一致 |
+| `updated_at` | INTEGER NOT NULL | 更新时间，epoch ms (Date.now()) |
 
 索引：`CREATE INDEX idx_todos_active ON todos(archived, sort_order)` 用于列表查询。
 
@@ -29,12 +29,14 @@ SQLite 数据库 `data/todo.db`，WAL 模式。
 | 方法 | 路径 | 说明 | 请求体 | 响应 |
 |------|------|------|--------|------|
 | GET | `/api/todos` | 获取未归档列表 | — | `{ todos: Todo[] }` 按 sort_order 升序 |
-| POST | `/api/todos` | 创建待办 | `{ title: string }` | `{ todo: Todo }` sort_order 自动取 max+1 |
+| POST | `/api/todos` | 创建待办 | `{ title: string }` | `{ todo: Todo }` sort_order 自动取 `COALESCE(MAX(sort_order), 0) + 1` |
 | PUT | `/api/todos/:id` | 更新待办 | `{ title?, completed? }` | `{ todo: Todo }` |
-| PUT | `/api/todos/reorder` | 批量更新排序 | `{ ids: string[] }` | `{ success: true }` ids 数组顺序即新排序 |
+| POST | `/api/todos/reorder` | 批量更新排序 | `{ ids: string[] }` | `{ success: true }` ids 数组顺序即新排序 |
 | POST | `/api/todos/archive-completed` | 归档所有已完成项 | — | `{ archived: number }` 归档数量 |
 | DELETE | `/api/todos/:id` | 删除单条 | — | `{ success: true }` |
 | GET | `/api/health` | 健康检查 | — | `{ status: 'ok' }` |
+
+错误处理：`PUT /api/todos/:id` 和 `DELETE /api/todos/:id` 对不存在的 id 返回 404。`POST /api/todos/reorder` 忽略 ids 中不存在的条目。
 
 ## 前端设计
 
@@ -74,7 +76,7 @@ SQLite 数据库 `data/todo.db`，WAL 模式。
 
 ### 配色
 
-复用 portal 的 CSS custom properties 体系：
+`index.css` 中定义 CSS custom properties，金色系：
 
 ```css
 :root {
@@ -147,9 +149,7 @@ widget:
 - `@my-toolbox/shared` (workspace)
 - `fastify`, `@fastify/cors`, `@fastify/static`
 - `better-sqlite3`
-- `react`, `react-dom`
-- `@dnd-kit/core`, `@dnd-kit/sortable`, `@dnd-kit/utilities`
-- `vite`, `@vitejs/plugin-react`
+- devDependencies: `react`, `react-dom`, `@dnd-kit/core`, `@dnd-kit/sortable`, `@dnd-kit/utilities`, `vite`, `@vitejs/plugin-react`, `typescript`, `@types/better-sqlite3`
 
 ## PM2 配置
 
@@ -160,7 +160,7 @@ widget:
   name: 'todo',
   script: 'packages/todo/dist/server/index.js',
   node_args: '--experimental-specifier-resolution=node',
-  env: { PORT: 3009 }
+  env: { PORT: 3009, PORTAL_URL: 'http://localhost:3000' }
 }
 ```
 
