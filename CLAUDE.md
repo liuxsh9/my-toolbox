@@ -15,6 +15,7 @@ pnpm dev:portal               # Dev mode for portal (Fastify :3000 + Vite :5173)
 pnpm dev:cc-monitor           # Dev mode for cc-monitor (Fastify :3001 + Vite :5174)
 pnpm --filter @my-toolbox/bookmarks dev      # Dev mode for bookmarks (:3002 + :5175)
 pnpm --filter @my-toolbox/win-switcher dev   # Dev mode for win-switcher (:3003 + :5176)
+pnpm --filter @my-toolbox/notes dev          # Dev mode for notes (:3005 + :5178)
 pm2 start ecosystem.config.js # Production start via PM2
 pm2 restart <name>            # Restart a single service after rebuild
 pm2 status                    # Check running services
@@ -29,20 +30,27 @@ No test framework is configured yet.
 
 | Variable | Default | Used by |
 |----------|---------|---------|
-| `PORT` | 3000 / 3001 / 3002 / 3003 | all tool packages |
-| `PORTAL_URL` | `http://localhost:3000` | cc-monitor, bookmarks, win-switcher |
+| `PORT` | 3000–3008 | all tool packages |
+| `PORTAL_URL` | `http://localhost:3000` | all tool packages (for SDK registration) |
 | `CC_MONITOR_URL` | `http://localhost:3001` | hooks-install script |
 | `NOTIFICATIONS_URL` | `http://localhost:3004` | cc-monitor (push notifications) |
+| `LITELLM_URL` | `http://localhost:4000` | litellm-monitor |
+| `LITELLM_KEY` | — | litellm-monitor (API key for LiteLLM) |
 
 ## Architecture
 
 **Monorepo layout** (`packages/*`, pnpm workspaces):
 
 - **`shared`** — Types (`ToolManifest`, `ToolInfo`, `ToolStatus`) and `registerTool()` SDK for external tools to register + heartbeat with the portal. All other packages depend on this; build it first.
-- **`portal`** (port 3000) — The main dashboard. Fastify server with SQLite (`better-sqlite3`, WAL mode) for the tool registry, plus a React+Vite SPA frontend.
+- **`portal`** (port 3000) — The main dashboard. Fastify server with SQLite (`better-sqlite3`, WAL mode) for the tool registry, plus a React+Vite SPA frontend. Desktop-style widget grid with drag/resize/minimize/maximize.
 - **`cc-monitor`** (port 3001) — Claude Code session monitor. Collects events via hooks, scans processes, and registers itself with the portal using the shared SDK.
 - **`bookmarks`** (port 3002) — Web bookmark manager with screenshot support. SQLite for storage, og:image fetching, multipart upload, drag-and-drop reordering.
 - **`win-switcher`** (port 3003) — macOS window switcher. Lists all open windows across Spaces via CGWindowList, captures thumbnails via `screencapture`, focuses windows via AX + private CGS APIs. Includes a native Swift script (`src/native/windows.swift`).
+- **`notifications`** (port 3004) — Unified notification inbox. Receives push notifications from other tools and captures macOS system notifications via a native Swift banner-watcher. In-memory storage (ephemeral). Real-time updates via SSE.
+- **`notes`** (port 3005) — Lightweight notepad. SQLite for storage.
+- **`litellm-monitor`** (port 3006) — LiteLLM request statistics dashboard. Connects to an external PostgreSQL database (`LiteLLM_SpendLogs` table) to aggregate request counts, success/failure rates, and RPS. Refreshes every 3s. Note: uses `pg` (PostgreSQL), not SQLite.
+- **`work-hours`** (port 3007) — Work hours tracker. Automatically records clock-in/out via a native Swift daemon that monitors screen lock/unlock and HID idle events. SQLite for daily summaries. Supports holiday calendars and manual time entry.
+- **`api-quota`** (port 3008) — API daily usage quota monitor. Fetches quota from an upstream endpoint. File-based session storage (`data/session.json`). Supports HTTP proxy.
 
 **Each tool package follows the same structure:**
 - `src/server/` — Fastify backend (compiled via `tsc -p tsconfig.server.json` → `dist/server/`)
@@ -80,25 +88,16 @@ No test framework is configured yet.
 | 3001 | CC Monitor | 5174 |
 | 3002 | Bookmarks | 5175 |
 | 3003 | Win-Switcher | 5176 |
-| 3004+ | Additional monorepo tools | 5177+ |
+| 3004 | Notifications | 5177 |
+| 3005 | Notes | 5178 |
+| 3006 | LiteLLM Monitor | 5179 |
+| 3007 | Work Hours | 5180 |
+| 3008 | API Quota | 5181 |
 | 4001+ | External registered tools | — |
 
 ## Tech Stack
 
 TypeScript (ESM, target ES2022), Fastify, React + Vite, SQLite (better-sqlite3, WAL mode), PM2. Node.js >= 20 required. All PM2 entries use `--experimental-specifier-resolution=node` for ESM.
-
-## Win-Switcher Native Component
-
-`packages/win-switcher/src/native/windows.swift` is a Swift script executed at runtime (not compiled ahead of time). It supports four commands:
-
-- **`list`** — enumerate all windows via CGWindowListCopyWindowInfo (requires Screen Recording permission)
-- **`focus <wid> <pid> <title>`** — raise a specific window via AXUIElement (requires Accessibility permission); raises first then activates to avoid macOS bringing the wrong window to front
-- **`focus-by-cwd <pid> <cwd>`** — walk the ppid chain from `pid` to find the first ancestor app, then call `NSWorkspace.open([cwdURL], withApplicationAt:)` to focus the correct project window. This is the preferred method for Electron apps (VS Code, Cursor) which don't expose AX windows.
-- **`check-permissions`** — returns `{accessibility, screenRecording}` booleans
-
-The server calls it via `execFile('swift', [script, command, ...args])`. Thumbnails are cached in `/tmp/winswitcher/` with 15s TTL and max 4 concurrent captures.
-
-The `POST /api/windows/focus-by-pid` route accepts `{pid, cwd?}`. When `cwd` is provided it uses `focus-by-cwd`; otherwise it falls back to window-list matching + `focus`.
 
 ## CC Monitor Hooks
 
@@ -112,9 +111,49 @@ Hooks are installed into `~/.claude/settings.json` and fire asynchronously (non-
 
 CC Monitor also scans for `claude` processes every 15s via `ps` + `lsof` and merges process-detected sessions with hook-reported sessions by matching cwd.
 
+## Native Swift Components
+
+Three packages include Swift scripts executed at runtime (not compiled ahead of time). All require macOS permissions.
+
+- **`win-switcher/src/native/windows.swift`** — Enumerates windows via CGWindowList, focuses windows via AXUIElement + private CGS APIs. Commands: `list`, `focus <wid> <pid> <title>`, `focus-by-cwd <pid> <cwd>`, `check-permissions`. Called via `execFile('swift', [script, ...])`. Thumbnails cached in `/tmp/winswitcher/` (15s TTL, max 4 concurrent captures). Requires Screen Recording + Accessibility permissions. The `focus-by-cwd` command is preferred for Electron apps (VS Code, Cursor) which don't expose AX windows.
+
+- **`notifications/src/native/banner-watcher.swift`** — Watches macOS notification banners via Accessibility API, parses title/body/source, and POSTs captured notifications to the notifications service. Runs as a separate PM2 process (`banner-watcher` in `ecosystem.config.js`), not spawned by Node.js. Requires Accessibility permission. Has a blocklist to filter system UI elements.
+
+- **`work-hours/src/native/monitor.swift`** — Monitors screen lock/unlock via DistributedNotificationCenter and HID idle time (300s threshold). Outputs JSON lines to stdout, consumed by the Node.js server via `spawn()`. Event types: `screen_lock`, `screen_unlock`, `idle_start`, `idle_end`. Requires no special permissions beyond what the parent process has.
+
 ## UI/UX 设计红线 (修改前端代码时严格执行)
 - 严禁使用系统默认的通用蓝色系 (如 Tailwind 的 blue-500) 作为唯一主色调。
 - 放弃均匀呆板的网格堆叠，强制引入非对称布局和大面积留白 (Negative space)。
 - 字体排印：标题必须有极强的字重对比，正文颜色降低对比度 (如 text-gray-600) 以突出层级。
 - 避免滥用纯白背景+深色阴影的"卡片风"，优先考虑通过极细的边框或微弱的背景色差来划分区域。
 - 前端使用 inline styles + CSS custom properties，不使用 Tailwind 等 CSS 框架。
+
+## 统一色板 (所有 widget 必须遵守)
+
+所有工具的暗色主题必须使用以下暖棕色系，禁止使用 Tailwind slate/gray 冷色系或纯黑 (#0a0a0a, #0f0f0f, #111210 等)。
+
+| Token | 值 | 用途 |
+|---|---|---|
+| `--bg` | `#1a1816` | 主背景 |
+| `--surface` | `#221f17` | 卡片/面板 |
+| `--surface2` | `#2a2720` | 次级面板、hover 状态 |
+| `--text-1` | `#ede8de` | 主文字 |
+| `--text-2` | `#8c8680` | 次要文字 |
+| `--text-3` | `#4a4844` | 弱化文字 |
+| `--border` | `rgba(255,255,255,0.09)` | 主边框 |
+| `--border2` | `rgba(255,255,255,0.05)` | 弱边框 |
+| `--accent` | `#d4a040` | 强调色 |
+
+各包的 CSS 变量名可能略有不同 (如 `--text-primary`, `--muted`, `--wh-bg` 等)，但色值必须对应上表。
+
+## 前端规范
+
+- 每个工具包的 `src/web/` 必须有 `index.css`，在其中设置 `:root` 变量和 `html, body, #root { height: 100%; overflow: hidden; }` 以确保 iframe 嵌入时背景铺满、不漏边。
+- `index.css` 必须在 `main.tsx` 中 import。
+- 禁止在 App.tsx 的根 div 上通过 inline style 设置 CSS 变量 (如 `'--bg': '#xxx'`)，应统一放在 `index.css` 中。
+- Widget 内的列表项使用 `borderBottom: '1px solid var(--border)'` 作为分隔线。
+- 文案语言：widget 标题栏 (portal WidgetWindow 的 displayName) 和 widget 内部的 section header 统一使用英文大写标签 (如 "NOTES", "NOTIFICATIONS")。
+
+## 已知问题
+
+- **portal discovery 不更新 displayName**: `tool.yaml` 的 `displayName` 修改后，portal 的 discovery upsert 不会覆盖 SQLite 中已有的值。需要手动更新数据库：`sqlite3 packages/portal/data/portal.db "UPDATE tools SET displayName='NewName' WHERE name='tool-name';"`
