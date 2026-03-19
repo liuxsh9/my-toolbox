@@ -221,7 +221,8 @@ function WidgetView({ bookmarks, loading, onAdd }: {
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
       {/* Compact header */}
       <div style={{
-        padding: '7px 10px',
+        height: 32,
+        padding: '0 10px',
         borderBottom: '1px solid var(--border)',
         display: 'flex',
         alignItems: 'center',
@@ -241,7 +242,7 @@ function WidgetView({ bookmarks, loading, onAdd }: {
             borderRadius: 4,
             cursor: 'pointer',
           }}
-        >+ 添加</button>
+        >+ Add</button>
       </div>
 
       {/* Compact grid */}

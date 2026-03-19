@@ -331,14 +331,15 @@ function WidgetView({ sessions, connectionStatus }: {
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
       {/* Status bar */}
       <div style={{
-        padding: '6px 10px',
-        borderBottom: '1px solid #1e293b',
+        height: 32,
+        padding: '0 10px',
+        borderBottom: '1px solid rgba(255,255,255,0.09)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
         flexShrink: 0,
       }}>
-        <span style={{ fontSize: 11, color: '#64748b' }}>
+        <span style={{ fontSize: 11, color: '#8c8680' }}>
           {activeSessions.length} active
         </span>
         <span style={{
@@ -351,7 +352,7 @@ function WidgetView({ sessions, connectionStatus }: {
       {/* Session list */}
       <div style={{ flex: 1, overflow: 'auto' }}>
         {sessions.length === 0 ? (
-          <p style={{ fontSize: 12, color: '#475569', padding: '12px 10px' }}>No active sessions</p>
+          <p style={{ fontSize: 12, color: '#4a4844', padding: '12px 10px' }}>No active sessions</p>
         ) : (
           sessions.map((session) => {
             const color = STATUS_COLORS[session.status] || '#6b7280'
@@ -364,16 +365,16 @@ function WidgetView({ sessions, connectionStatus }: {
                 key={session.sessionId}
                 onClick={() => handleSessionClick(session)}
                 style={{
-                  padding: '8px 10px',
-                  borderBottom: '1px solid #1e293b',
+                  padding: '8px 12px',
+                  borderBottom: '1px solid rgba(255,255,255,0.09)',
                   cursor: clickable ? 'pointer' : 'default',
                   opacity: isEnded ? 0.5 : 1,
                   display: 'flex',
-                  alignItems: 'center',
+                  alignItems: 'start',
                   gap: 8,
                   transition: 'background .1s',
                 }}
-                onMouseEnter={e => { if (clickable) (e.currentTarget as HTMLDivElement).style.background = '#1e293b' }}
+                onMouseEnter={e => { if (clickable) (e.currentTarget as HTMLDivElement).style.background = '#2a2720' }}
                 onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.background = 'transparent' }}
               >
                 <span
@@ -381,20 +382,20 @@ function WidgetView({ sessions, connectionStatus }: {
                   style={{
                     width: 7, height: 7, borderRadius: '50%',
                     background: color, flexShrink: 0,
+                    marginTop: 4,
                   }}
                 />
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <p style={{
-                    fontSize: 12, fontWeight: 600, color: '#e2e8f0',
+                  <div style={{
+                    fontSize: 11, fontWeight: 500, color: '#ede8de',
                     overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                    lineHeight: 1.3,
                   }}>
                     {getProjectName(session.project)}
-                  </p>
-                  <p style={{ fontSize: 10, color: '#475569', lineHeight: 1.3 }}>
+                  </div>
+                  <div style={{ fontSize: 9, color: '#4a4844', marginTop: 1 }}>
                     {session.lastToolName ? session.lastToolName : STATUS_LABELS[session.status] || session.status}
                     {' · '}{formatDuration(session.startedAt)}
-                  </p>
+                  </div>
                 </div>
               </div>
             )

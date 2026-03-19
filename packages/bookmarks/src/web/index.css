@@ -19,15 +19,15 @@
 }
 
 body.widget {
-  --bg: #111210;
-  --surface: #1a1917;
-  --border: rgba(255,255,255,0.07);
-  --border-subtle: rgba(255,255,255,0.04);
-  --text-primary: #e4dfd6;
-  --text-secondary: #7a7670;
-  --text-muted: #3d3b38;
-  --accent: #c8a96e;
-  --accent-light: rgba(200,169,110,0.1);
+  --bg: #1a1816;
+  --surface: #221f17;
+  --border: rgba(255,255,255,0.09);
+  --border-subtle: rgba(255,255,255,0.05);
+  --text-primary: #ede8de;
+  --text-secondary: #8c8680;
+  --text-muted: #4a4844;
+  --accent: #d4a040;
+  --accent-light: rgba(212,160,64,0.1);
   --accent-hover: #b8965a;
   --danger: #c0614a;
   --danger-light: rgba(192,97,74,0.1);

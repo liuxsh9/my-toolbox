@@ -5,15 +5,15 @@
 }
 
 :root {
-  --bg:       #1a1916;
-  --surface:  #1f1e1b;
-  --surface2: #252420;
-  --border:   rgba(255,255,255,0.07);
-  --border2:  rgba(255,255,255,0.12);
-  --text-1:   #e8e4dc;
-  --text-2:   #b8b3a8;
-  --text-3:   #6b6760;
-  --accent:   #c8a96e;
+  --bg:       #1a1816;
+  --surface:  #221f17;
+  --surface2: #2a2720;
+  --border:   rgba(255,255,255,0.09);
+  --border2:  rgba(255,255,255,0.05);
+  --text-1:   #ede8de;
+  --text-2:   #8c8680;
+  --text-3:   #4a4844;
+  --accent:   #d4a040;
   --font-mono: "JetBrains Mono", "Fira Code", "Cascadia Code", ui-monospace, monospace;
 }
 

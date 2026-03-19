@@ -11,12 +11,11 @@ interface Notification {
 
 function relativeTime(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime()
-  const mins = Math.floor(diff / 60000)
-  if (mins < 1) return 'just now'
-  if (mins < 60) return `${mins}m ago`
-  const hours = Math.floor(mins / 60)
-  if (hours < 24) return `${hours}h ago`
-  return `${Math.floor(hours / 24)}d ago`
+  if (diff < 60_000) return '刚刚'
+  if (diff < 3_600_000) return `${Math.floor(diff / 60_000)}分钟前`
+  if (diff < 86_400_000) return `${Math.floor(diff / 3_600_000)}小时前`
+  if (diff < 7 * 86_400_000) return `${Math.floor(diff / 86_400_000)}天前`
+  return new Date(iso).toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' })
 }
 
 function sourceIcon(source: string): string {
@@ -74,106 +73,107 @@ export default function App() {
 
   return (
     <div style={{
-      '--bg': '#0f0f0f',
-      '--surface': '#1a1a1a',
-      '--border': '#2a2a2a',
-      '--text': '#e8e8e8',
-      '--muted': '#666',
-      '--accent': '#c8a96e',
-      '--dismiss-hover': '#222',
-      fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif',
-      background: 'var(--bg)',
-      color: 'var(--text)',
-      minHeight: '100vh',
-      padding: '0',
-    } as React.CSSProperties}>
+      height: '100%',
+      display: 'flex',
+      flexDirection: 'column',
+      overflow: 'hidden',
+    }}>
       {/* Header */}
       <div style={{
         display: 'flex',
         alignItems: 'center',
-        justifyContent: 'flex-end',
-        padding: '10px 16px 8px',
+        justifyContent: 'space-between',
+        height: 32,
+        padding: '0 10px',
         borderBottom: '1px solid var(--border)',
       }}>
+        <span style={{ fontSize: 11, color: 'var(--muted)' }}>
+          {notifications.length > 0 ? `${notifications.length} 条通知` : ''}
+        </span>
         {notifications.length > 0 && (
           <button
             onClick={clearAll}
             style={{
-              background: 'none',
+              padding: '2px 8px',
+              fontSize: 11,
+              fontWeight: 600,
+              background: 'var(--accent)',
+              color: '#fff',
               border: 'none',
-              color: 'var(--muted)',
-              fontSize: '10px',
+              borderRadius: 4,
               cursor: 'pointer',
-              padding: '2px 4px',
-              borderRadius: '4px',
-              transition: 'color 0.15s',
             }}
-            onMouseEnter={e => (e.currentTarget.style.color = 'var(--text)')}
-            onMouseLeave={e => (e.currentTarget.style.color = 'var(--muted)')}
           >
-            Clear all
+            Clear
           </button>
         )}
       </div>
 
       {/* List */}
-      <div style={{ overflowY: 'auto', maxHeight: 'calc(100vh - 45px)' }}>
+      <div style={{ overflowY: 'auto', flex: 1 }}>
         {notifications.length === 0 ? (
           <div style={{
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
-            padding: '48px 24px',
-            gap: '8px',
+            height: '100%',
+            gap: 10,
+            padding: 24,
           }}>
-            <span style={{ fontSize: '11px', opacity: 0.2 }}>◎</span>
-            <span style={{ fontSize: '11px', color: 'var(--muted)' }}>No notifications</span>
+            <span style={{ fontSize: 24, opacity: 0.3 }}>◎</span>
+            <span style={{ fontSize: 11, color: 'var(--muted)', textAlign: 'center' as const, lineHeight: 1.5 }}>暂无通知</span>
           </div>
         ) : (
           notifications.map((n, i) => (
-            <div
+            <button
               key={n.id}
               onClick={() => dismiss(n.id)}
               style={{
-                padding: '12px 16px',
-                borderBottom: i < notifications.length - 1 ? '1px solid var(--border)' : 'none',
-                cursor: 'pointer',
-                transition: 'background 0.1s',
-                display: 'grid',
-                gridTemplateColumns: '20px 1fr auto',
-                gap: '8px',
+                display: 'flex',
                 alignItems: 'start',
+                gap: 8,
+                width: '100%',
+                padding: '8px 12px',
+                background: 'transparent',
+                border: 'none',
+                borderBottom: '1px solid var(--border)',
+                cursor: 'pointer',
+                textAlign: 'left' as const,
+                transition: 'background 0.1s',
+                color: 'inherit',
+                font: 'inherit',
               }}
-              onMouseEnter={e => (e.currentTarget.style.background = 'var(--dismiss-hover)')}
+              onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface2, #2a2720)')}
               onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
             >
               {/* Icon */}
-              <span style={{ color: 'var(--accent)', fontSize: '12px', paddingTop: '1px' }}>
+              <span style={{ color: 'var(--accent)', fontSize: 11, paddingTop: 1, flexShrink: 0 }}>
                 {sourceIcon(n.source)}
               </span>
 
               {/* Content */}
-              <div style={{ minWidth: 0 }}>
-                <div style={{ fontSize: '11px', fontWeight: 600, marginBottom: '2px', color: 'var(--text)' }}>
+              <div style={{ minWidth: 0, flex: 1 }}>
+                <div style={{ fontSize: 11, fontWeight: 500, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>
                   {n.title}
                 </div>
                 <div style={{
-                  fontSize: '10px',
+                  fontSize: 9,
                   color: 'var(--muted)',
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap',
+                  whiteSpace: 'nowrap' as const,
+                  marginTop: 1,
                 }}>
                   {n.body}
                 </div>
               </div>
 
               {/* Time */}
-              <span style={{ fontSize: '9px', color: 'var(--muted)', whiteSpace: 'nowrap', paddingTop: '2px' }}>
+              <span style={{ fontSize: 9, color: 'var(--muted)', whiteSpace: 'nowrap' as const, flexShrink: 0 }}>
                 {relativeTime(n.createdAt)}
               </span>
-            </div>
+            </button>
           ))
         )}
       </div>

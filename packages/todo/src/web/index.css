@@ -1,13 +1,13 @@
 :root {
-  --bg:       #221f17;
-  --surface:  #2a2720;
-  --surface2: #322f26;
-  --border:   rgba(255,255,255,0.06);
-  --border2:  rgba(255,255,255,0.10);
+  --bg:       #1a1816;
+  --surface:  #221f17;
+  --surface2: #2a2720;
+  --border:   rgba(255,255,255,0.09);
+  --border2:  rgba(255,255,255,0.05);
   --text-1:   #ede8de;
   --text-2:   #8c8680;
   --text-3:   #4a4844;
-  --accent:   #c8a96e;
+  --accent:   #d4a040;
   --font-mono: 'SF Mono', 'Cascadia Code', 'Fira Code', monospace;
 }
 
@@ -15,6 +15,10 @@
 
 html, body, #root {
   height: 100%;
+  overflow: hidden;
+}
+
+body {
   background: var(--bg);
   color: var(--text-1);
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -24,3 +28,4 @@ html, body, #root {
 ::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-3); }

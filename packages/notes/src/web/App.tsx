@@ -85,30 +85,28 @@ function ListView({ notes, onSelect, onCreate }: {
       {/* Header */}
       <div style={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '10px 12px 8px',
+        height: 32,
+        padding: '0 10px',
         borderBottom: '1px solid var(--border)',
         flexShrink: 0,
       }}>
-        <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', color: 'var(--text-3)', textTransform: 'uppercase' }}>Notes</span>
+        <span style={{ fontSize: 11, color: 'var(--text-3)' }}>
+          {notes.length > 0 ? `${notes.length} 条笔记` : ''}
+        </span>
         <button
           onClick={onCreate}
           title="新建笔记"
           style={{
-            width: 22, height: 22,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            border: '1px solid var(--border)',
-            borderRadius: 5,
-            background: 'transparent',
-            color: 'var(--text-3)',
+            padding: '2px 8px',
+            fontSize: 11,
+            fontWeight: 600,
+            background: 'var(--accent)',
+            color: '#fff',
+            border: 'none',
+            borderRadius: 4,
             cursor: 'pointer',
-            fontSize: 16,
-            lineHeight: 1,
-            padding: 0,
-            transition: 'color .12s, border-color .12s',
           }}
-          onMouseEnter={e => { e.currentTarget.style.color = 'var(--text-1)'; e.currentTarget.style.borderColor = 'var(--border2)' }}
-          onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-3)'; e.currentTarget.style.borderColor = 'var(--border)' }}
-        >+</button>
+        >+ New</button>
       </div>
 
       {/* List */}

@@ -42,17 +42,17 @@ export function App() {
 
   if (isWidget) {
     return (
-      <div style={{ height: '100%', background: '#111210', color: '#e4dfd6', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      <div style={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
         <Monitor connectionStatus={connectionStatus} hooksInstalled={hooksInstalled} isWidget />
       </div>
     )
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: '#111210', color: '#e4dfd6' }}>
+    <div style={{ minHeight: '100vh' }}>
       <header style={{
         padding: '16px 24px',
-        borderBottom: '1px solid #1e293b',
+        borderBottom: '1px solid rgba(255,255,255,0.09)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
