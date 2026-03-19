@@ -1,0 +1,13 @@
+name: todo
+displayName: Todo
+description: 轻量待办清单，勾选完成、拖拽排序、一键归档
+version: 0.1.0
+url: http://localhost:3009
+health: /api/health
+pm2Name: todo
+category: productivity
+widget:
+  minW: 2
+  minH: 4
+  defaultW: 3
+  defaultH: 10
