@@ -8,7 +8,7 @@ import { WidgetWindow } from './WidgetWindow'
 
 const STORAGE_KEY = 'portal-desktop-layout'
 const COLS = 12
-const ROW_HEIGHT = 60
+const ROW_HEIGHT = 30
 
 interface WidgetState {
   minimized: boolean
@@ -22,10 +22,11 @@ interface SavedLayout {
 
 function getDefaultLayout(tools: ToolInfo[]): Layout[] {
   const defaults: Record<string, { x: number; y: number; w: number; h: number }> = {
-    'win-switcher': { x: 0, y: 0, w: 5, h: 8 },
-    'cc-monitor':   { x: 5, y: 0, w: 7, h: 5 },
-    'bookmarks':    { x: 5, y: 5, w: 7, h: 6 },
-    'notes':        { x: 0, y: 8, w: 4, h: 6 },
+    'win-switcher': { x: 0, y: 0, w: 5, h: 16 },
+    'cc-monitor':   { x: 5, y: 0, w: 7, h: 10 },
+    'bookmarks':    { x: 5, y: 10, w: 7, h: 12 },
+    'notes':        { x: 0, y: 16, w: 4, h: 12 },
+    'todo':         { x: 4, y: 16, w: 3, h: 10 },
   }
 
   return tools
@@ -48,9 +49,18 @@ function loadSaved(tools: ToolInfo[]): SavedLayout | null {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (!raw) return null
     const saved = JSON.parse(raw) as SavedLayout
-    const toolNames = new Set(tools.map(t => t.name))
-    // Filter stale entries
-    saved.layouts = saved.layouts.filter(l => toolNames.has(l.i))
+    const toolMap = new Map(tools.map(t => [t.name, t]))
+    // Filter stale entries and refresh minW/minH from current tool config
+    saved.layouts = saved.layouts
+      .filter(l => toolMap.has(l.i))
+      .map(l => {
+        const wc = toolMap.get(l.i)!.widget
+        return {
+          ...l,
+          minW: wc?.minW ?? 2,
+          minH: wc?.minH ?? 3,
+        }
+      })
     return saved
   } catch {
     return null
@@ -143,7 +153,7 @@ export function Desktop({ tools }: { tools: ToolInfo[] }) {
   function addWidget(tool: ToolInfo) {
     const wc = tool.widget
     const w = wc?.defaultW ?? 4
-    const h = wc?.defaultH ?? 6
+    const h = wc?.defaultH ?? 12
     // Find a free y position below existing widgets
     const maxY = layouts.reduce((m, l) => Math.max(m, l.y + l.h), 0)
     const newLayout: Layout = {
@@ -203,7 +213,7 @@ export function Desktop({ tools }: { tools: ToolInfo[] }) {
             draggableHandle=".widget-drag-handle"
             margin={[8, 8]}
             containerPadding={[0, 0]}
-            resizeHandles={['se']}
+            resizeHandles={['s', 'e', 'se']}
           >
             {layouts.map(l => {
               const tool = toolMap.get(l.i)
