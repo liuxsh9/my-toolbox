@@ -1,6 +1,6 @@
 import Fastify from 'fastify'
 import cors from '@fastify/cors'
-import fastifyStatic from '@fastify/static'
+import { registerSpaStatic } from '@my-toolbox/shared'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { initDb } from './db.js'
@@ -25,15 +25,7 @@ async function main() {
   // Serve frontend in production
   const webDir = path.resolve(__dirname, '../web')
   try {
-    await app.register(fastifyStatic, {
-      root: webDir,
-      prefix: '/',
-      wildcard: false,
-    })
-    // SPA fallback
-    app.setNotFoundHandler((_req, reply) => {
-      reply.sendFile('index.html', webDir)
-    })
+    await registerSpaStatic(app, webDir)
   } catch {
     app.log.warn('No built frontend found at %s — skipping static file serving', webDir)
   }

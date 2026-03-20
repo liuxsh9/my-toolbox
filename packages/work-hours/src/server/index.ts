@@ -12,7 +12,7 @@ import { registerTodayRoute } from './routes/today.js'
 import { registerDaysRoutes } from './routes/days.js'
 import { registerStatsRoute } from './routes/stats.js'
 import { registerHolidaysRoutes } from './routes/holidays.js'
-import { registerSpaStatic } from './static.js'
+import { registerSpaStatic } from '@my-toolbox/shared'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const PORT = parseInt(process.env.PORT || '3007', 10)

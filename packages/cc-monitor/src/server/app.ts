@@ -1,8 +1,8 @@
 import Fastify, { type FastifyBaseLogger, type FastifyInstance } from 'fastify'
 import cors from '@fastify/cors'
-import fastifyStatic from '@fastify/static'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { registerSpaStatic } from '@my-toolbox/shared'
 import { registerEventsRoute } from './routes/events.js'
 import { registerSessionsRoute } from './routes/sessions.js'
 import { registerHealthRoute } from './routes/health.js'
@@ -33,17 +33,7 @@ export async function createApp(options: CreateAppOptions = {}): Promise<Fastify
 
   const webDir = options.webDir ?? path.resolve(__dirname, '../web')
   try {
-    await app.register(fastifyStatic, {
-      root: webDir,
-      prefix: '/',
-      wildcard: true,
-    })
-    app.setNotFoundHandler((req, reply) => {
-      if (req.url.startsWith('/api/')) {
-        return reply.status(404).send({ ok: false, error: 'Not found' })
-      }
-      return reply.sendFile('index.html', webDir)
-    })
+    await registerSpaStatic(app, webDir)
   } catch {
     app.log.warn('No built frontend found — skipping static file serving')
   }

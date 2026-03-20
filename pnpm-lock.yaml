@@ -368,10 +368,23 @@ importers:
         version: 6.4.1(@types/node@25.3.0)(tsx@4.21.0)
 
   packages/shared:
+    dependencies:
+      '@fastify/static':
+        specifier: ^8.3.0
+        version: 8.3.0
+      fastify:
+        specifier: ^5.7.4
+        version: 5.7.4
     devDependencies:
+      '@types/node':
+        specifier: ^25.3.0
+        version: 25.3.0
       typescript:
         specifier: ^5.7.0
         version: 5.9.3
+      vitest:
+        specifier: ^3.2.4
+        version: 3.2.4(@types/node@25.3.0)(jsdom@26.1.0)(tsx@4.21.0)
 
   packages/todo:
     dependencies:
