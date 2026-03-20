@@ -1,6 +1,5 @@
 import Fastify from 'fastify'
 import cors from '@fastify/cors'
-import fastifyStatic from '@fastify/static'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { spawn, type ChildProcess } from 'node:child_process'
@@ -13,6 +12,7 @@ import { registerTodayRoute } from './routes/today.js'
 import { registerDaysRoutes } from './routes/days.js'
 import { registerStatsRoute } from './routes/stats.js'
 import { registerHolidaysRoutes } from './routes/holidays.js'
+import { registerSpaStatic } from './static.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const PORT = parseInt(process.env.PORT || '3007', 10)
@@ -148,15 +148,7 @@ async function main() {
   // Serve frontend SPA in production
   const webDir = path.resolve(__dirname, '../web')
   try {
-    await app.register(fastifyStatic, {
-      root: webDir,
-      prefix: '/',
-      wildcard: false,
-      decorateReply: false,
-    })
-    app.setNotFoundHandler((_req, reply) => {
-      reply.sendFile('index.html', webDir)
-    })
+    await registerSpaStatic(app, webDir)
   } catch {
     app.log.warn('No built frontend found — skipping static file serving')
   }
