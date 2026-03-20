@@ -65,6 +65,9 @@ export function WeekView({ widget }: { widget?: boolean }) {
   monday.setDate(monday.getDate() + weekOffset * 7)
   const sunday = new Date(monday)
   sunday.setDate(sunday.getDate() + 6)
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const includesToday = monday.getTime() <= today.getTime() && today.getTime() <= sunday.getTime()
 
   const fetchWeek = useCallback(async (opts?: { silent?: boolean }) => {
     if (!opts?.silent) setLoading(true)
@@ -92,8 +95,13 @@ export function WeekView({ widget }: { widget?: boolean }) {
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true)
+    if (includesToday) {
+      try {
+        await fetch('/api/today/refresh', { method: 'POST' })
+      } catch { /* ignore */ }
+    }
     refreshBus.emitGlobalRefresh('week')
-  }, [])
+  }, [includesToday])
 
   const chartData = WEEKDAY_SHORT.map((day, i) => {
     const d = new Date(monday)

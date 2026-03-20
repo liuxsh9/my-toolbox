@@ -32,14 +32,20 @@ describe('WeekView', () => {
       json: async () => [],
     } as Response)
 
-    let resolveRefresh: ((value: Response) => void) | null = null
-    const secondResponse = new Promise<Response>((resolve) => {
-      resolveRefresh = resolve
+    const refreshWriteResponse = Promise.resolve({
+      ok: true,
+      json: async () => ({ ok: true }),
+    } as Response)
+
+    let resolveRefreshRead: ((value: Response) => void) | null = null
+    const refreshReadResponse = new Promise<Response>((resolve) => {
+      resolveRefreshRead = resolve
     })
 
     const fetchMock = vi.fn()
       .mockReturnValueOnce(firstResponse)
-      .mockReturnValueOnce(secondResponse)
+      .mockReturnValueOnce(refreshWriteResponse)
+      .mockReturnValueOnce(refreshReadResponse)
 
     global.fetch = fetchMock as typeof fetch
 
@@ -56,13 +62,16 @@ describe('WeekView', () => {
     fireEvent.click(refreshButton)
 
     await waitFor(() => {
-      expect(fetchMock).toHaveBeenCalledTimes(2)
+      expect(fetchMock).toHaveBeenCalledTimes(3)
     })
 
     expect(refreshButton).toBeDisabled()
-    expect(fetchMock.mock.calls[0]?.[0]).toEqual(fetchMock.mock.calls[1]?.[0])
+    expect(fetchMock.mock.calls[0]?.[0]).toEqual('/api/days?from=2026-03-16&to=2026-03-22')
+    expect(fetchMock.mock.calls[1]?.[0]).toEqual('/api/today/refresh')
+    expect(fetchMock.mock.calls[1]?.[1]).toEqual({ method: 'POST' })
+    expect(fetchMock.mock.calls[2]?.[0]).toEqual(fetchMock.mock.calls[0]?.[0])
 
-    resolveRefresh?.({
+    resolveRefreshRead?.({
       ok: true,
       json: async () => [],
     } as Response)
@@ -86,6 +95,39 @@ describe('WeekView', () => {
     })
 
     fireEvent.click(screen.getByRole('button', { name: '↻' }))
+
+    await waitFor(() => {
+      expect(emitSpy).toHaveBeenCalledWith('week')
+    })
+  })
+
+  it('refreshes today before broadcasting when viewing the current week', async () => {
+    const emitSpy = vi.spyOn(refreshBus, 'emitGlobalRefresh')
+    global.fetch = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input)
+      if (url === '/api/today/refresh') {
+        return {
+          ok: true,
+          json: async () => ({ ok: true }),
+        } as Response
+      }
+      return {
+        ok: true,
+        json: async () => [],
+      } as Response
+    }) as typeof fetch
+
+    render(<WeekView widget />)
+
+    await waitFor(() => {
+      expect(global.fetch).toHaveBeenCalledTimes(1)
+    })
+
+    fireEvent.click(screen.getByRole('button', { name: '↻' }))
+
+    await waitFor(() => {
+      expect(global.fetch).toHaveBeenCalledWith('/api/today/refresh', { method: 'POST' })
+    })
 
     await waitFor(() => {
       expect(emitSpy).toHaveBeenCalledWith('week')
