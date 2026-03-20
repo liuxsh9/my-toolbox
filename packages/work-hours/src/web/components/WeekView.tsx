@@ -58,23 +58,33 @@ export function WeekView({ widget }: { widget?: boolean }) {
   const [weekOffset, setWeekOffset] = useState(0)
   const [days, setDays] = useState<DaySummary[]>([])
   const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
 
   const monday = getMonday(new Date())
   monday.setDate(monday.getDate() + weekOffset * 7)
   const sunday = new Date(monday)
   sunday.setDate(sunday.getDate() + 6)
 
-  const fetchWeek = useCallback(async () => {
-    setLoading(true)
+  const fetchWeek = useCallback(async (opts?: { silent?: boolean }) => {
+    if (!opts?.silent) setLoading(true)
     try {
       const res = await fetch(`/api/days?from=${dateStr(monday)}&to=${dateStr(sunday)}`)
       if (res.ok) setDays(await res.json())
     } catch { /* ignore */ }
-    setLoading(false)
+    if (!opts?.silent) setLoading(false)
   }, [weekOffset])
 
   useEffect(() => {
     fetchWeek()
+  }, [fetchWeek])
+
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true)
+    try {
+      await fetchWeek({ silent: true })
+    } finally {
+      setRefreshing(false)
+    }
   }, [fetchWeek])
 
   const chartData = WEEKDAY_SHORT.map((day, i) => {
@@ -113,6 +123,18 @@ export function WeekView({ widget }: { widget?: boolean }) {
           {weekLabel}
         </span>
         <button onClick={() => setWeekOffset(w => w + 1)} style={widget ? navBtnSmall : navBtnStyle}>→</button>
+        <button
+          onClick={handleRefresh}
+          style={{
+            ...(widget ? navBtnSmall : navBtnStyle),
+            opacity: refreshing ? 0.5 : 1,
+          }}
+          title="Refresh current week"
+          aria-label="↻"
+          disabled={loading || refreshing}
+        >
+          ↻
+        </button>
         {weekOffset !== 0 && (
           <button
             onClick={() => setWeekOffset(0)}
