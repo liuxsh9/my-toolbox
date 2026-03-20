@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { EditModal } from './EditModal'
+import * as refreshBus from '../refreshBus'
 
 interface DayDetail {
   summary: {
@@ -188,6 +189,16 @@ export function DayView({ initialDate, widget }: { initialDate?: string | null; 
     if (initialDate) setDate(initialDate)
   }, [initialDate])
 
+  useEffect(() => {
+    return refreshBus.subscribeGlobalRefresh(async () => {
+      try {
+        await fetchDay(date)
+      } finally {
+        setRefreshing(false)
+      }
+    })
+  }, [date, fetchDay])
+
   const summary = data?.summary
   const events = data?.events ?? []
 
@@ -235,11 +246,13 @@ export function DayView({ initialDate, widget }: { initialDate?: string | null; 
           <button
             onClick={async () => {
               setRefreshing(true)
+              let emitted = false
               try {
                 await fetch('/api/today/refresh', { method: 'POST' })
-                await fetchDay(date)
+                refreshBus.emitGlobalRefresh('day')
+                emitted = true
               } catch { /* ignore */ }
-              setRefreshing(false)
+              if (!emitted) setRefreshing(false)
             }}
             style={{
               ...(widget ? navBtnSmall : navBtnStyle),

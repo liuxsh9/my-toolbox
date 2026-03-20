@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, ReferenceLine } from 'recharts'
+import * as refreshBus from '../refreshBus'
 
 /* ── types ── */
 interface TodayData {
@@ -275,6 +276,13 @@ export function TodayView({ widget }: { widget?: boolean }) {
   useEffect(() => {
     if (!isSmall) fetchWeek()
   }, [isSmall, fetchWeek])
+
+  useEffect(() => {
+    return refreshBus.subscribeGlobalRefresh(async () => {
+      await fetchToday()
+      if (!isSmall) await fetchWeek()
+    })
+  }, [fetchToday, fetchWeek, isSmall])
 
   if (loading) {
     return (

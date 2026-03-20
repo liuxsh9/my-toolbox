@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import * as refreshBus from '../refreshBus'
 
 interface DaySummary {
   work_day: string
@@ -134,6 +135,10 @@ export function MonthView({ onDayClick, widget }: { onDayClick: (date: string) =
 
   useEffect(() => {
     fetchMonth()
+  }, [fetchMonth])
+
+  useEffect(() => {
+    return refreshBus.subscribeGlobalRefresh(() => fetchMonth())
   }, [fetchMonth])
 
   const prevMonth = () => {

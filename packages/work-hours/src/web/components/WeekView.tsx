@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, ReferenceLine, Tooltip } from 'recharts'
+import * as refreshBus from '../refreshBus'
 
 interface DaySummary {
   work_day: string
@@ -78,14 +79,21 @@ export function WeekView({ widget }: { widget?: boolean }) {
     fetchWeek()
   }, [fetchWeek])
 
+  useEffect(() => {
+    return refreshBus.subscribeGlobalRefresh(async () => {
+      setRefreshing(true)
+      try {
+        await fetchWeek({ silent: true })
+      } finally {
+        setRefreshing(false)
+      }
+    })
+  }, [fetchWeek])
+
   const handleRefresh = useCallback(async () => {
     setRefreshing(true)
-    try {
-      await fetchWeek({ silent: true })
-    } finally {
-      setRefreshing(false)
-    }
-  }, [fetchWeek])
+    refreshBus.emitGlobalRefresh('week')
+  }, [])
 
   const chartData = WEEKDAY_SHORT.map((day, i) => {
     const d = new Date(monday)

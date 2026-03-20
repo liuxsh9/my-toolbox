@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
+import * as refreshBus from '../refreshBus'
 
 interface Stats {
   period: string
@@ -17,21 +18,26 @@ export function SummaryCards() {
   const [weekStats, setWeekStats] = useState<Stats | null>(null)
   const [monthStats, setMonthStats] = useState<Stats | null>(null)
 
+  const load = useCallback(async () => {
+    try {
+      const [wRes, mRes] = await Promise.all([
+        fetch('/api/stats?period=week'),
+        fetch('/api/stats?period=month'),
+      ])
+      if (wRes.ok) setWeekStats(await wRes.json())
+      if (mRes.ok) setMonthStats(await mRes.json())
+    } catch { /* ignore */ }
+  }, [])
+
   useEffect(() => {
-    async function load() {
-      try {
-        const [wRes, mRes] = await Promise.all([
-          fetch('/api/stats?period=week'),
-          fetch('/api/stats?period=month'),
-        ])
-        if (wRes.ok) setWeekStats(await wRes.json())
-        if (mRes.ok) setMonthStats(await mRes.json())
-      } catch { /* ignore */ }
-    }
     load()
     const id = setInterval(load, 60_000)
     return () => clearInterval(id)
-  }, [])
+  }, [load])
+
+  useEffect(() => {
+    return refreshBus.subscribeGlobalRefresh(() => load())
+  }, [load])
 
   const cards: { label: string; value: string; sub?: string }[] = [
     {

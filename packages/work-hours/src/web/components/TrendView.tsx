@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, ReferenceLine, Tooltip, CartesianGrid } from 'recharts'
+import * as refreshBus from '../refreshBus'
 
 interface DaySummary {
   work_day: string
@@ -34,6 +35,10 @@ export function TrendView({ widget }: { widget?: boolean }) {
 
   useEffect(() => {
     fetchData()
+  }, [fetchData])
+
+  useEffect(() => {
+    return refreshBus.subscribeGlobalRefresh(() => fetchData())
   }, [fetchData])
 
   // Build chart data for every day in range (fill gaps with 0)
