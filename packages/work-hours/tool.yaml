@@ -1,0 +1,13 @@
+name: work-hours
+displayName: Work Hours
+description: 工时统计 — 自动记录上下班时间，可视化工作时长与加班
+version: 0.1.0
+url: http://localhost:3007
+health: /api/health
+pm2Name: work-hours
+category: productivity
+widget:
+  minW: 2
+  minH: 2
+  defaultW: 4
+  defaultH: 14

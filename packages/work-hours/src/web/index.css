@@ -1,0 +1,49 @@
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --wh-primary: #E8913A;
+  --wh-primary-light: #f0a85c;
+  --wh-primary-dark: #c97a2e;
+  --wh-overtime: #E06060;
+  --wh-break: #E5E5E5;
+  --wh-bg: #FAFAF8;
+  --wh-text: #1F2937;
+  --wh-text-secondary: #6B7280;
+  --wh-border: #E5E7EB;
+  --wh-surface: #FFFFFF;
+  --wh-track: #F3F4F6;
+  --wh-radius: 8px;
+}
+
+/* Dark theme for portal widget embedding */
+.theme-dark {
+  --wh-primary: #d4a040;
+  --wh-primary-light: #e0b860;
+  --wh-primary-dark: #b88a30;
+  --wh-overtime: #c0614a;
+  --wh-break: #3a3730;
+  --wh-bg: #1a1816;
+  --wh-text: #ede8de;
+  --wh-text-secondary: #8c8680;
+  --wh-border: rgba(255,255,255,0.09);
+  --wh-surface: #221f17;
+  --wh-track: #2a2720;
+  --wh-radius: 8px;
+}
+
+html, body, #root {
+  height: 100%;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', system-ui, sans-serif;
+  background: var(--wh-bg);
+  color: var(--wh-text);
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
