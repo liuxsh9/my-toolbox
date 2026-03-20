@@ -1,0 +1,21 @@
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #1a1816;
+  --surface: #221f17;
+  --surface2: #2a2720;
+  --border: rgba(255,255,255,0.09);
+  --text-primary: #ede8de;
+  --text-muted: #8c8680;
+  --text-dim: #4a4844;
+  --accent: #d4a040;
+}
+
+html, body, #root { height: 100%; overflow: hidden; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+  background: var(--bg);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+}

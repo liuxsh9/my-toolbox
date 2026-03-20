@@ -1,0 +1,13 @@
+name: api-quota
+displayName: API Quota
+description: 实时显示 vibe-code API 今日用量（已用/剩余次数）
+version: 0.1.0
+url: http://localhost:3008
+health: /api/health
+pm2Name: api-quota
+category: monitoring
+widget:
+  minW: 2
+  minH: 2
+  defaultW: 2
+  defaultH: 3
