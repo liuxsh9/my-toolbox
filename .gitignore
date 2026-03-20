@@ -27,3 +27,11 @@ logs/
 .env
 .env.*
 !.env.example
+
+# Local agent / brainstorming artifacts
+.agents/
+.superpowers/
+
+# Runtime-generated tool artifacts
+packages/bookmarks/data/screenshots/
+packages/api-quota/data/session.json
