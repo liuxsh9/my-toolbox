@@ -146,7 +146,7 @@ function SortableItem({
           value={editValue}
           onChange={e => setEditValue(e.target.value)}
           onKeyDown={e => {
-            if (e.key === 'Enter') {
+            if (e.key === 'Enter' && !e.nativeEvent.isComposing && e.keyCode !== 229) {
               const v = editValue.trim()
               if (v && v !== todo.title) onEdit(todo.id, v)
               setEditing(false)
@@ -343,7 +343,7 @@ export function App() {
           ref={inputRef}
           value={input}
           onChange={e => setInput(e.target.value)}
-          onKeyDown={e => { if (e.key === 'Enter') handleAdd() }}
+          onKeyDown={e => { if (e.key === 'Enter' && !e.nativeEvent.isComposing && e.keyCode !== 229) handleAdd() }}
           placeholder={compact ? '+ Add...' : '+ Add todo...'}
           style={{
             flex: 1,
