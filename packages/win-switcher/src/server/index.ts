@@ -1,9 +1,8 @@
 import Fastify from 'fastify'
 import cors from '@fastify/cors'
-import fastifyStatic from '@fastify/static'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { registerTool } from '@my-toolbox/shared'
+import { registerSpaStatic, registerTool } from '@my-toolbox/shared'
 import { registerHealthRoute } from './routes/health.js'
 import { registerWindowsRoutes } from './routes/windows.js'
 
@@ -22,14 +21,7 @@ async function main() {
   // Serve frontend SPA in production
   const webDir = path.resolve(__dirname, '../web')
   try {
-    await app.register(fastifyStatic, {
-      root: webDir,
-      prefix: '/',
-      wildcard: false,
-    })
-    app.setNotFoundHandler((_req, reply) => {
-      reply.sendFile('index.html', webDir)
-    })
+    await registerSpaStatic(app, webDir)
   } catch {
     app.log.warn('No built frontend found — skipping static file serving')
   }

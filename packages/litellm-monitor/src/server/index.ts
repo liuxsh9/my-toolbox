@@ -1,9 +1,8 @@
 import Fastify from 'fastify'
 import cors from '@fastify/cors'
-import fastifyStatic from '@fastify/static'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { registerTool } from '@my-toolbox/shared'
+import { registerSpaStatic, registerTool } from '@my-toolbox/shared'
 import { registerMetricsRoute } from './routes/metrics.js'
 import { registerHealthRoute } from './routes/health.js'
 import { registerFunnelRoute } from './routes/funnel.js'
@@ -26,8 +25,7 @@ async function main() {
   // Serve frontend
   const webDir = path.resolve(__dirname, '../web')
   try {
-    await app.register(fastifyStatic, { root: webDir, prefix: '/', wildcard: false })
-    app.setNotFoundHandler((_req, reply) => reply.sendFile('index.html', webDir))
+    await registerSpaStatic(app, webDir)
   } catch {
     // no frontend built yet
   }
