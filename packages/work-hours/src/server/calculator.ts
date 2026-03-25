@@ -140,11 +140,18 @@ export function calculateDay(events: Event[], dayType: DayType): DaySummary {
   const firstActiveEvent = sorted.find((e) => ACTIVE_START_TYPES.includes(e.type))
   const firstActive = firstActiveEvent ? firstActiveEvent.timestamp : sorted[0].timestamp
 
-  // last_active: latest screen_lock or idle_start, or latest event overall
-  // For idle_start events, backtrack by the idle threshold (300s) to reflect
-  // the actual last-active moment rather than when idle was detected.
-  const endEvents = sorted.filter((e) => ACTIVE_END_TYPES.includes(e.type))
-  const lastActiveEvent = endEvents.length > 0 ? endEvents[endEvents.length - 1] : sorted[sorted.length - 1]
+  // last_active: the first transition into the final inactive stretch, or
+  // the latest event overall if the day is still active. This prevents a later
+  // auto screen lock from overwriting the real last-active moment already
+  // captured by idle_start. For idle_start events, backtrack by the idle
+  // threshold (300s) to reflect the actual last-active moment rather than when
+  // idle was detected.
+  const lastStartIndex = [...sorted]
+    .map((event, index) => ({ event, index }))
+    .filter(({ event }) => ACTIVE_START_TYPES.includes(event.type))
+    .at(-1)?.index ?? -1
+  const lastActiveEvent = sorted.slice(lastStartIndex + 1).find((e) => ACTIVE_END_TYPES.includes(e.type))
+    ?? sorted[sorted.length - 1]
   let lastActive = lastActiveEvent.timestamp
   if (lastActiveEvent.type === 'idle_start') {
     const t = new Date(lastActive)

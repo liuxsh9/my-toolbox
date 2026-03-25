@@ -20,6 +20,16 @@ vi.mock('recharts', () => {
 describe('WeekView', () => {
   const originalFetch = global.fetch
 
+  const now = new Date()
+  const monday = new Date(now)
+  const day = monday.getDay()
+  const diff = day === 0 ? -6 : 1 - day
+  monday.setDate(monday.getDate() + diff)
+  monday.setHours(0, 0, 0, 0)
+  const sunday = new Date(monday)
+  sunday.setDate(sunday.getDate() + 6)
+  const currentWeekUrl = `/api/days?from=${monday.getFullYear()}-${String(monday.getMonth() + 1).padStart(2, '0')}-${String(monday.getDate()).padStart(2, '0')}&to=${sunday.getFullYear()}-${String(sunday.getMonth() + 1).padStart(2, '0')}-${String(sunday.getDate()).padStart(2, '0')}`
+
   afterEach(() => {
     refreshBus.__resetRefreshBusForTests()
     vi.restoreAllMocks()
@@ -66,7 +76,7 @@ describe('WeekView', () => {
     })
 
     expect(refreshButton).toBeDisabled()
-    expect(fetchMock.mock.calls[0]?.[0]).toEqual('/api/days?from=2026-03-16&to=2026-03-22')
+    expect(fetchMock.mock.calls[0]?.[0]).toEqual(currentWeekUrl)
     expect(fetchMock.mock.calls[1]?.[0]).toEqual('/api/today/refresh')
     expect(fetchMock.mock.calls[1]?.[1]).toEqual({ method: 'POST' })
     expect(fetchMock.mock.calls[2]?.[0]).toEqual(fetchMock.mock.calls[0]?.[0])
