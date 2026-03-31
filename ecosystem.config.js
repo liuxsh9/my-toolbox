@@ -102,6 +102,16 @@ module.exports = {
       },
     },
     {
+      name: 'music',
+      script: 'packages/music/dist/server/index.js',
+      node_args: '--experimental-specifier-resolution=node',
+      env: {
+        NODE_ENV: 'production',
+        PORT: 3010,
+        PORTAL_URL: 'http://localhost:3000',
+      },
+    },
+    {
       name: 'banner-watcher',
       script: 'swift',
       args: 'packages/notifications/src/native/banner-watcher.swift --url http://localhost:3004',
