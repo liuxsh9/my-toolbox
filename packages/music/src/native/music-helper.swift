@@ -3,21 +3,22 @@
 // Polls now-playing info every 3s, accepts JSON commands on stdin
 
 import Foundation
+import AppKit
 
 // MARK: - MediaRemote Framework Loading
 
 let mediaRemotePath = "/System/Library/PrivateFrameworks/MediaRemote.framework/Versions/A/MediaRemote"
-guard let handle = dlopen(mediaRemotePath, RTLD_LAZY) else {
+guard let mrHandle = dlopen(mediaRemotePath, RTLD_LAZY) else {
     fputs("ERROR: Failed to load MediaRemote framework\n", stderr)
     exit(1)
 }
 
-func loadSymbol<T>(_ name: String) -> T {
-    guard let sym = dlsym(handle, name) else {
+func loadMRSymbol<T>(_ name: String, _ type: T.Type) -> T {
+    guard let sym = dlsym(mrHandle, name) else {
         fputs("ERROR: Symbol not found: \(name)\n", stderr)
         exit(1)
     }
-    return unsafeBitCast(sym, to: T.self)
+    return unsafeBitCast(sym, to: type)
 }
 
 // MARK: - MediaRemote Function Declarations
@@ -26,9 +27,9 @@ typealias GetNowPlayingClientFunc = @convention(c) (DispatchQueue, @escaping (An
 typealias GetNowPlayingInfoFunc = @convention(c) (DispatchQueue, @escaping (Dictionary<String, Any>?) -> Void) -> Void
 typealias SendCommandFunc = @convention(c) (Int, Any?, @escaping (Any?) -> Void) -> Void
 
-let MRMediaRemoteGetNowPlayingClient = loadSymbol<GetNowPlayingClientFunc>("MRMediaRemoteGetNowPlayingClient")
-let MRMediaRemoteGetNowPlayingInfo = loadSymbol<GetNowPlayingInfoFunc>("MRMediaRemoteGetNowPlayingInfo")
-let MRMediaRemoteSendCommand = loadSymbol<SendCommandFunc>("MRMediaRemoteSendCommand")
+let MRMediaRemoteGetNowPlayingClient = loadMRSymbol("MRMediaRemoteGetNowPlayingClient", GetNowPlayingClientFunc.self)
+let MRMediaRemoteGetNowPlayingInfo = loadMRSymbol("MRMediaRemoteGetNowPlayingInfo", GetNowPlayingInfoFunc.self)
+let MRMediaRemoteSendCommand = loadMRSymbol("MRMediaRemoteSendCommand", SendCommandFunc.self)
 
 // Command IDs
 let kMRMediaRemoteCommandPlayPause = 3
@@ -51,7 +52,7 @@ let neteaseBundleId = "com.netease.163music"
 
 // MARK: - Output
 
-func output(_ dict: [String: Any]) {
+@Sendable func output(_ dict: [String: Any]) {
     do {
         let data = try JSONSerialization.data(withJSONObject: dict)
         if let str = String(data: data, encoding: .utf8) {
@@ -140,7 +141,7 @@ func fetchAndOutput() {
 // MARK: - Send Command
 
 func sendCommand(_ commandId: Int) {
-    MRMediaRemoteSendCommand(commandId, nil) { _ in
+    MRMediaRemoteSendCommand(commandId, nil as Any?) { _ in
         output(["type": "commandResult", "command": commandId, "success": true])
         // Refresh info after command
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
