@@ -74,7 +74,7 @@ func fetchAndOutput() {
 
     group.enter()
     MRMediaRemoteGetNowPlayingClient(DispatchQueue.global()) { client in
-        if let client = client {
+        if let client = client as? AnyObject {
             let sel = Selector(("bundleIdentifier"))
             if client.responds(to: sel) {
                 let val = client.perform(sel)
