@@ -1,0 +1,13 @@
+name: music
+displayName: Music
+description: 网易云音乐控制器
+version: 0.1.0
+url: http://localhost:3010
+health: /api/health
+pm2Name: music
+category: media
+widget:
+  minW: 3
+  minH: 2
+  defaultW: 4
+  defaultH: 2
