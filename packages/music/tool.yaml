@@ -8,6 +8,6 @@ pm2Name: music
 category: media
 widget:
   minW: 3
-  minH: 2
+  minH: 3
   defaultW: 4
-  defaultH: 2
+  defaultH: 3

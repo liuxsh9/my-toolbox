@@ -122,10 +122,11 @@ export function App() {
     <div style={{
       height: '100%',
       display: 'flex',
-      alignItems: 'center',
-      gap: 12,
-      padding: 10,
+      flexDirection: 'column',
+      justifyContent: 'center',
+      padding: '0 10px',
     }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
       {/* Cover Art */}
       <div style={{
         width: 72,
@@ -155,7 +156,7 @@ export function App() {
         minWidth: 0,
         display: 'flex',
         flexDirection: 'column',
-        gap: 4,
+        gap: 3,
       }}>
         {/* Track info */}
         <div style={{
@@ -180,21 +181,19 @@ export function App() {
         </div>
 
         {/* Progress */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           <div style={{
             flex: 1,
             height: 3,
             background: 'var(--border2)',
             borderRadius: 2,
             overflow: 'hidden',
-            position: 'relative',
           }}>
             <div style={{
               width: `${Math.min((progress / duration) * 100, 100)}%`,
               height: '100%',
               background: 'var(--accent)',
               borderRadius: 2,
-              transition: 'width 0.3s linear',
             }} />
           </div>
           <span style={{ fontSize: 9, color: 'var(--text-3)', minWidth: 52, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
@@ -207,8 +206,7 @@ export function App() {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          gap: 8,
-          marginTop: 2,
+          gap: 6,
         }}>
           <CtrlBtn onClick={() => control('prev')} label="上一曲">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z" /></svg>
@@ -223,10 +221,11 @@ export function App() {
           <CtrlBtn onClick={() => control('next')} label="下一曲">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z" /></svg>
           </CtrlBtn>
-          <CtrlBtn onClick={() => control('open')} label="打开网易云" style={{ marginLeft: 4 }}>
+          <CtrlBtn onClick={() => control('open')} label="打开网易云" style={{ marginLeft: 2 }}>
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3" /></svg>
           </CtrlBtn>
         </div>
+      </div>
       </div>
     </div>
   )

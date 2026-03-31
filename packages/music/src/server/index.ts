@@ -2,7 +2,7 @@ import Fastify from 'fastify'
 import cors from '@fastify/cors'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { spawn, type ChildProcess } from 'node:child_process'
+import { spawn, execSync, type ChildProcess } from 'node:child_process'
 import { createInterface } from 'node:readline'
 import { registerTool, registerSpaStatic } from '@my-toolbox/shared'
 

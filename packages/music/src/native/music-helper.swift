@@ -1,5 +1,5 @@
 #!/usr/bin/env swift
-// music-helper.swift — NetEase Cloud Music controller via MediaRemote
+// music-helper.swift — Music controller via MediaRemote
 // Polls now-playing info every 3s, accepts JSON commands on stdin
 
 import Foundation
@@ -23,36 +23,19 @@ func loadMRSymbol<T>(_ name: String, _ type: T.Type) -> T {
 
 // MARK: - MediaRemote Function Declarations
 
-typealias GetNowPlayingClientFunc = @convention(c) (DispatchQueue, @escaping (Any?) -> Void) -> Void
 typealias GetNowPlayingInfoFunc = @convention(c) (DispatchQueue, @escaping (Dictionary<String, Any>?) -> Void) -> Void
 typealias SendCommandFunc = @convention(c) (Int, Any?, @escaping (Any?) -> Void) -> Void
 
-let MRMediaRemoteGetNowPlayingClient = loadMRSymbol("MRMediaRemoteGetNowPlayingClient", GetNowPlayingClientFunc.self)
 let MRMediaRemoteGetNowPlayingInfo = loadMRSymbol("MRMediaRemoteGetNowPlayingInfo", GetNowPlayingInfoFunc.self)
 let MRMediaRemoteSendCommand = loadMRSymbol("MRMediaRemoteSendCommand", SendCommandFunc.self)
 
-// Command IDs
-let kMRMediaRemoteCommandPlayPause = 3
-let kMRMediaRemoteCommandNextTrack = 4
-let kMRMediaRemoteCommandPreviousTrack = 5
-
-// Info keys
-let kMRTitle = "kMRMediaRemoteNowPlayingInfoTitle"
-let kMRArtist = "kMRMediaRemoteNowPlayingInfoArtist"
-let kMRAlbum = "kMRMediaRemoteNowPlayingInfoAlbum"
-let kMRDuration = "kMRMediaRemoteNowPlayingInfoDuration"
-let kMRElapsed = "kMRMediaRemoteNowPlayingInfoElapsedTime"
-let kMRRate = "kMRMediaRemoteNowPlayingInfoPlaybackRate"
-let kMRArtworkData = "kMRMediaRemoteNowPlayingInfoArtworkData"
-
 // MARK: - State
 
-var lastOutputHash: String = ""
-let neteaseBundleId = "com.netease.163music"
+var lastHash: String = ""
 
 // MARK: - Output
 
-@Sendable func output(_ dict: [String: Any]) {
+func output(_ dict: [String: Any]) {
     do {
         let data = try JSONSerialization.data(withJSONObject: dict)
         if let str = String(data: data, encoding: .utf8) {
@@ -67,63 +50,35 @@ let neteaseBundleId = "com.netease.163music"
 // MARK: - Get Now Playing Info
 
 func fetchAndOutput() {
-    let group = DispatchGroup()
-
-    var currentBundleId: String? = nil
-    var nowPlayingInfo: Dictionary<String, Any>? = nil
-
-    group.enter()
-    MRMediaRemoteGetNowPlayingClient(DispatchQueue.global()) { client in
-        if let client = client as? AnyObject {
-            let sel = Selector(("bundleIdentifier"))
-            if client.responds(to: sel) {
-                let val = client.perform(sel)
-                currentBundleId = val?.takeUnretainedValue() as? String
-            }
-        }
-        group.leave()
-    }
-
-    group.enter()
-    MRMediaRemoteGetNowPlayingInfo(DispatchQueue.global()) { info in
-        nowPlayingInfo = info
-        group.leave()
-    }
-
-    group.notify(queue: .global()) {
-        guard currentBundleId == neteaseBundleId else {
-            let hash = "inactive"
-            if hash != lastOutputHash {
-                lastOutputHash = hash
+    MRMediaRemoteGetNowPlayingInfo(DispatchQueue.main) { info in
+        guard let info = info else {
+            if lastHash != "none" {
+                lastHash = "none"
                 output(["type": "nowPlaying", "inactive": true])
             }
             return
         }
 
-        guard let info = nowPlayingInfo else {
-            let hash = "no-info"
-            if hash != lastOutputHash {
-                lastOutputHash = hash
-                output(["type": "nowPlaying", "inactive": true])
-            }
-            return
-        }
-
-        let title = info[kMRTitle] as? String ?? ""
-        let artist = info[kMRArtist] as? String ?? ""
-        let album = info[kMRAlbum] as? String ?? ""
-        let duration = info[kMRDuration] as? Double ?? 0
-        let elapsed = info[kMRElapsed] as? Double ?? 0
-        let rate = info[kMRRate] as? Int ?? 0
-        let artworkData = info[kMRArtworkData] as? Data
+        let title = info["kMRMediaRemoteNowPlayingInfoTitle"] as? String ?? ""
+        let artist = info["kMRMediaRemoteNowPlayingInfoArtist"] as? String ?? ""
+        let album = info["kMRMediaRemoteNowPlayingInfoAlbum"] as? String ?? ""
+        let duration = info["kMRMediaRemoteNowPlayingInfoDuration"] as? Double ?? 0
+        let elapsed = info["kMRMediaRemoteNowPlayingInfoElapsedTime"] as? Double ?? 0
+        let rate = info["kMRMediaRemoteNowPlayingInfoPlaybackRate"] as? Int ?? 0
+        let artworkData = info["kMRMediaRemoteNowPlayingInfoArtworkData"] as? Data
         let artworkBase64 = artworkData?.base64EncodedString()
 
-        // Hash for change detection (title + rate + rounded elapsed)
-        let elapsedRound = Int(elapsed)
-        let hash = "\(title)|\(artist)|\(rate)|\(elapsedRound)"
+        if title.isEmpty && artist.isEmpty {
+            if lastHash != "empty" {
+                lastHash = "empty"
+                output(["type": "nowPlaying", "inactive": true])
+            }
+            return
+        }
 
-        if hash != lastOutputHash {
-            lastOutputHash = hash
+        let hash = "\(title)|\(artist)|\(rate)|\(Int(elapsed))"
+        if hash != lastHash {
+            lastHash = hash
             output([
                 "type": "nowPlaying",
                 "title": title,
@@ -140,22 +95,50 @@ func fetchAndOutput() {
 
 // MARK: - Send Command
 
-func sendCommand(_ commandId: Int) {
-    MRMediaRemoteSendCommand(commandId, nil as Any?) { _ in
-        output(["type": "commandResult", "command": commandId, "success": true])
-        // Refresh info after command
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            lastOutputHash = ""
+// Toggle uses MediaRemote (no app activation).
+// Next/Prev use AppleScript click menu item (no activation).
+
+func sendCommand(_ action: String) {
+    switch action {
+    case "toggle":
+        MRMediaRemoteSendCommand(2, nil) { _ in
+            lastHash = ""
             fetchAndOutput()
         }
+    case "next":
+        clickMenuItem("下一个")
+    case "prev":
+        clickMenuItem("上一个")
+    default:
+        break
     }
 }
 
-// MARK: - Open NetEase
+func clickMenuItem(_ itemName: String) {
+    let script = """
+    tell application "System Events"
+        tell process "NeteaseMusic"
+            click menu item "\(itemName)" of menu "控制" of menu bar item "控制" of menu bar 1
+        end tell
+    end tell
+    """
+    let proc = Process()
+    proc.executableURL = URL(fileURLWithPath: "/usr/bin/osascript")
+    proc.arguments = ["-e", script]
+    do {
+        try proc.run()
+        proc.waitUntilExit()
+    } catch {}
+    lastHash = ""
+    fetchAndOutput()
+}
 
-func openNetease() {
+// MARK: - Open App
+
+func openApp() {
+    let bundleId = "com.netease.163music"
     let workspace = NSWorkspace.shared
-    if let appURL = workspace.urlForApplication(withBundleIdentifier: neteaseBundleId) {
+    if let appURL = workspace.urlForApplication(withBundleIdentifier: bundleId) {
         workspace.openApplication(at: appURL, configuration: NSWorkspace.OpenConfiguration(), completionHandler: nil)
         output(["type": "commandResult", "command": "open", "success": true])
     } else {
@@ -185,16 +168,16 @@ func setupStdinReader() {
 
             switch command {
             case "info":
-                lastOutputHash = ""
+                lastHash = ""
                 fetchAndOutput()
             case "toggle":
-                sendCommand(kMRMediaRemoteCommandPlayPause)
+                sendCommand("toggle")
             case "next":
-                sendCommand(kMRMediaRemoteCommandNextTrack)
+                sendCommand("next")
             case "prev":
-                sendCommand(kMRMediaRemoteCommandPreviousTrack)
+                sendCommand("prev")
             case "open":
-                openNetease()
+                openApp()
             default:
                 break
             }
